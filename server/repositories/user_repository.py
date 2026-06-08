@@ -18,3 +18,12 @@ class UserRepository(BaseRepository[User]):
     async def exists_by_username(self, username: str) -> bool:
         user = await self.find_by_username(username)
         return user is not None
+
+    async def find_by_id(self, user_id: int) -> User | None:
+        return await self.get_by_id(user_id)
+
+    async def save(self, user: User) -> User:
+        self._session.add(user)
+        await self._session.flush()
+        await self._session.refresh(user)
+        return user
