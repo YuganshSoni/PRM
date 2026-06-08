@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from server.core.database import get_database_manager
 from server.core.exception_handlers import ExceptionHandlerRegistrar
+from server.routers.auth_router import AuthRouter
 from server.routers.health_router import HealthRouter
 
 
@@ -13,6 +14,7 @@ class ApplicationFactory:
         app = FastAPI(lifespan=self.lifespan, debug=False)
         ExceptionHandlerRegistrar().register(app)
         app.include_router(HealthRouter().router)
+        app.include_router(AuthRouter().router)
         return app
 
     @asynccontextmanager
