@@ -19,3 +19,35 @@ class ValidationError(PrmError):
 
 class DatabaseUnavailableError(PrmError):
     pass
+
+
+class WeakPasswordError(PrmError):
+    pass
+
+
+class PasswordMismatchError(PrmError):
+    pass
+
+
+class InvalidCredentialsError(PrmError):
+    pass
+
+
+class AccountInactiveError(PrmError):
+    pass
+
+
+class InvalidTokenError(PrmError):
+    pass
+
+
+class TokenExpiredError(PrmError):
+    pass
+
+
+class ForbiddenError(PrmError):
+    pass
+
+
+class UserNotFoundError(PrmError):
+    pass

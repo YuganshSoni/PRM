@@ -5,11 +5,19 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from server.core.exceptions import (
+    AccountInactiveError,
     ConflictError,
     DatabaseUnavailableError,
+    ForbiddenError,
+    InvalidCredentialsError,
+    InvalidTokenError,
     NotFoundError,
+    PasswordMismatchError,
     PrmError,
+    TokenExpiredError,
+    UserNotFoundError,
     ValidationError,
+    WeakPasswordError,
 )
 from server.schemas.responses.error import ErrorResponse
 
@@ -18,7 +26,15 @@ logger = logging.getLogger(__name__)
 
 class ExceptionHandlerRegistrar:
     STATUS_MAP: ClassVar[dict[type[PrmError], int]] = {
+        WeakPasswordError: 400,
+        PasswordMismatchError: 400,
         ValidationError: 400,
+        InvalidCredentialsError: 401,
+        AccountInactiveError: 401,
+        InvalidTokenError: 401,
+        TokenExpiredError: 401,
+        ForbiddenError: 403,
+        UserNotFoundError: 404,
         NotFoundError: 404,
         ConflictError: 409,
         DatabaseUnavailableError: 503,
