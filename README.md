@@ -28,6 +28,18 @@ uvicorn server.main:app --reload
 
 - `GET /health` — liveness
 - `GET /health/db` — database connectivity
+- `POST /auth/login` — authenticate (returns JWT)
+- `POST /auth/change-password` — change password (Bearer token required)
+- `POST /auth/logout` — logout (Bearer token required)
+- `GET /auth/me` — current user profile (Bearer token required)
+
+### Auth example
+
+```bash
+curl -s -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"Admin@1234"}'
+```
 
 ## Verify
 
