@@ -111,3 +111,27 @@ class SkillNotFoundError(NotFoundError):
 
 class InvalidSkillCategoryError(ValidationError):
     pass
+
+
+class ProjectNotFoundError(NotFoundError):
+    pass
+
+
+class MilestoneNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidProjectManagerError(ValidationError):
+    pass
+
+
+class InvalidProjectDatesError(ValidationError):
+    pass
+
+
+class InvalidProjectStatusError(ValidationError):
+    pass
+
+
+class InvalidStoryPointsError(ValidationError):
+    pass
