@@ -40,7 +40,7 @@ python -m client.main
 
 Screen 1 flows: start menu → login → forced password change (bootstrap admin) → role menu → logout.
 
-Admin (Screen 3): **Manage Employees**, **Manage Projects** (create, view SP Done/Total, update incl. COMPLETED, milestones), and **Manage Users**. Other admin options stubbed until Phase 7.
+Admin (Screen 3): **Manage Employees**, **Manage Projects**, **View All Allocations**, **Manage Users**, and **System Configuration**. Manager/Employee menus stubbed until Phase 8+.
 
 - `GET /health` — liveness
 - `GET /health/db` — database connectivity
@@ -70,6 +70,9 @@ Admin (Screen 3): **Manage Employees**, **Manage Projects** (create, view SP Don
 - `POST /projects/{id}/milestones` — add milestone (Admin only)
 - `GET /projects/{id}/milestones` — list milestones with SP summary (Admin only)
 - `PUT /milestones/{id}` — update milestone status (Admin only)
+- `GET /config` — system settings (API key masked) (Admin only)
+- `PUT /config` — update LLM provider/key, scheduler interval, max weekly hours (Admin only)
+- `GET /allocations` — list active company-wide allocations (Admin only)
 
 Run migration after pull: `alembic upgrade head` (adds `employees.manager_id`, story point columns).
 
