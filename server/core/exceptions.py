@@ -71,3 +71,43 @@ class UserAlreadyActiveError(ValidationError):
 
 class SelfOperationForbiddenError(ValidationError):
     pass
+
+
+class EmployeeNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidUserRoleForEmployeeError(ValidationError):
+    pass
+
+
+class EmployeeAlreadyInactiveError(ValidationError):
+    pass
+
+
+class ManagerUserNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidManagerRoleError(ValidationError):
+    pass
+
+
+class ManagerProfileNotFoundError(NotFoundError):
+    pass
+
+
+class SelfManagerAssignmentError(ValidationError):
+    pass
+
+
+class DuplicateSkillError(ConflictError):
+    pass
+
+
+class SkillNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidSkillCategoryError(ValidationError):
+    pass
