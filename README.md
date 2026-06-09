@@ -40,7 +40,9 @@ python -m client.main
 
 Screen 1 flows: start menu → login → forced password change (bootstrap admin) → role menu → logout.
 
-Admin (Screen 3): **Manage Employees**, **Manage Projects**, **View All Allocations**, **Manage Users**, and **System Configuration**. Manager/Employee menus stubbed until Phase 8+.
+Admin (Screen 3): **Manage Employees**, **Manage Projects**, **View All Allocations**, **Manage Users**, and **System Configuration**.
+
+Manager (Screen 4): **Resource Dashboard** (option 1). Options 2–5 stubbed until Phase 9+. Employee menu stubbed until Phase 10+.
 
 - `GET /health` — liveness
 - `GET /health/db` — database connectivity
@@ -73,6 +75,8 @@ Admin (Screen 3): **Manage Employees**, **Manage Projects**, **View All Allocati
 - `GET /config` — system settings (API key masked) (Admin only)
 - `PUT /config` — update LLM provider/key, scheduler interval, max weekly hours (Admin only)
 - `GET /allocations` — list active company-wide allocations (Admin only)
+- `GET /dashboard/resources` — manager team bench, active employees, stats (Manager only)
+- `GET /dashboard/employees/{id}` — team member drill-down with skills, allocations, tags (Manager only)
 
 Run migration after pull: `alembic upgrade head` (adds `employees.manager_id`, story point columns).
 
