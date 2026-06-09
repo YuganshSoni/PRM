@@ -31,6 +31,42 @@ class AllocationRepository(BaseRepository[Allocation]):
         )
         return list(result.scalars().unique().all())
 
+    async def find_overlapping(
+        self, employee_id: int, from_date: date, to_date: date
+    ) -> list[Allocation]:
+        result = await self._session.execute(
+            select(Allocation).where(
+                Allocation.employee_id == employee_id,
+                Allocation.from_date <= to_date,
+                Allocation.to_date >= from_date,
+            )
+        )
+        return list(result.scalars().all())
+
+    async def get_by_id_with_relations(self, allocation_id: int) -> Allocation | None:
+        result = await self._session.execute(
+            select(Allocation)
+            .where(Allocation.id == allocation_id)
+            .options(
+                selectinload(Allocation.employee),
+                selectinload(Allocation.project).selectinload(Project.manager),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def find_active_by_project(self, project_id: int) -> list[Allocation]:
+        today = date.today()
+        result = await self._session.execute(
+            select(Allocation)
+            .where(
+                Allocation.project_id == project_id,
+                Allocation.to_date >= today,
+            )
+            .options(selectinload(Allocation.employee))
+            .order_by(Allocation.id)
+        )
+        return list(result.scalars().all())
+
     async def find_active_by_employee(self, employee_id: int) -> list[Allocation]:
         today = date.today()
         result = await self._session.execute(
