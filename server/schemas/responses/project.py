@@ -51,3 +51,15 @@ class ProjectCreatedResponse(BaseModel):
 class ProjectUpdatedResponse(BaseModel):
     id: int
     message: ProjectMessage
+
+
+class ManagedProjectSummaryResponse(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
+    id: int
+    name: str
+    status: ProjectStatus
+
+
+class ManagedProjectListResponse(BaseModel):
+    items: list[ManagedProjectSummaryResponse]
