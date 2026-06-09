@@ -12,8 +12,13 @@ from server.core.password_policy import PasswordPolicy
 from server.core.security import PasswordHasher
 from server.models.enums import UserRole
 from server.models.user import User
+from server.repositories.allocation_repository import AllocationRepository
+from server.repositories.employee_repository import EmployeeRepository
+from server.repositories.skill_repository import SkillRepository
 from server.repositories.user_repository import UserRepository
 from server.services.auth_service import AuthService
+from server.services.employee_service import EmployeeService
+from server.services.skill_service import SkillService
 from server.services.user_service import UserService
 
 
@@ -120,3 +125,31 @@ async def get_user_service(
 
 
 dependency_provider.get_user_service = get_user_service
+
+
+async def get_employee_service(
+    session: Annotated[AsyncSession, Depends(get_db)],
+    user_repository: Annotated[
+        UserRepository, Depends(dependency_provider.get_user_repository)
+    ],
+) -> EmployeeService:
+    return EmployeeService(
+        employee_repository=EmployeeRepository(session),
+        user_repository=user_repository,
+        allocation_repository=AllocationRepository(session),
+    )
+
+
+dependency_provider.get_employee_service = get_employee_service
+
+
+async def get_skill_service(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> SkillService:
+    return SkillService(
+        skill_repository=SkillRepository(session),
+        employee_repository=EmployeeRepository(session),
+    )
+
+
+dependency_provider.get_skill_service = get_skill_service

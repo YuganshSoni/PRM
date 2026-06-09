@@ -6,7 +6,9 @@ from fastapi import FastAPI
 from server.core.database import get_database_manager
 from server.core.exception_handlers import ExceptionHandlerRegistrar
 from server.routers.auth_router import AuthRouter
+from server.routers.employee_router import EmployeeRouter
 from server.routers.health_router import HealthRouter
+from server.routers.skill_router import SkillRouter
 from server.routers.user_router import UserRouter
 
 
@@ -17,6 +19,8 @@ class ApplicationFactory:
         app.include_router(HealthRouter().router)
         app.include_router(AuthRouter().router)
         app.include_router(UserRouter().router)
+        app.include_router(EmployeeRouter().router)
+        app.include_router(SkillRouter().router)
         return app
 
     @asynccontextmanager
