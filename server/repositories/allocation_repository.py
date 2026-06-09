@@ -14,6 +14,23 @@ class AllocationRepository(BaseRepository[Allocation]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Allocation)
 
+    async def find_active_by_team(self, manager_employee_id: int) -> list[Allocation]:
+        today = date.today()
+        result = await self._session.execute(
+            select(Allocation)
+            .join(Employee, Allocation.employee_id == Employee.id)
+            .where(
+                Employee.manager_id == manager_employee_id,
+                Allocation.to_date >= today,
+            )
+            .options(
+                selectinload(Allocation.employee),
+                selectinload(Allocation.project),
+            )
+            .order_by(Allocation.employee_id, Allocation.id)
+        )
+        return list(result.scalars().unique().all())
+
     async def find_active_by_employee(self, employee_id: int) -> list[Allocation]:
         today = date.today()
         result = await self._session.execute(

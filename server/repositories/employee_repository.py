@@ -68,5 +68,42 @@ class EmployeeRepository(BaseRepository[Employee]):
         )
         return int(result.scalar_one())
 
+    async def find_by_manager_and_status(
+        self,
+        manager_employee_id: int,
+        status: EmployeeStatus,
+        *,
+        load_skills: bool = False,
+    ) -> list[Employee]:
+        query = (
+            select(Employee)
+            .where(
+                Employee.manager_id == manager_employee_id,
+                Employee.status == status,
+                Employee.is_active.is_(True),
+            )
+            .order_by(Employee.id)
+        )
+        if load_skills:
+            query = query.options(selectinload(Employee.skills))
+        result = await self._session.execute(query)
+        return list(result.scalars().all())
+
+    async def count_by_manager_and_status(
+        self,
+        manager_employee_id: int,
+        status: EmployeeStatus,
+    ) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(Employee)
+            .where(
+                Employee.manager_id == manager_employee_id,
+                Employee.status == status,
+                Employee.is_active.is_(True),
+            )
+        )
+        return int(result.scalar_one())
+
     async def save(self, employee: Employee) -> Employee:
         return await self.add(employee)
