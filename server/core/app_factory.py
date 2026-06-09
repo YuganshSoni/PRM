@@ -8,6 +8,7 @@ from server.core.exception_handlers import ExceptionHandlerRegistrar
 from server.routers.allocation_router import AllocationRouter
 from server.routers.auth_router import AuthRouter
 from server.routers.config_router import ConfigRouter
+from server.routers.dashboard_router import DashboardRouter
 from server.routers.employee_router import EmployeeRouter
 from server.routers.health_router import HealthRouter
 from server.routers.milestone_router import MilestoneRouter
@@ -29,6 +30,7 @@ class ApplicationFactory:
         app.include_router(MilestoneRouter().router)
         app.include_router(ConfigRouter().router)
         app.include_router(AllocationRouter().router)
+        app.include_router(DashboardRouter().router)
         return app
 
     @asynccontextmanager
