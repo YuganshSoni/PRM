@@ -2,6 +2,7 @@ from datetime import datetime
 
 from client.exceptions import ApiRequestError, NetworkError
 from client.screens.base_screen import BaseScreen
+from client.screens.manager.allocate_resource_screen import AllocateResourceScreen
 from client.screens.manager.resource_dashboard_screen import ResourceDashboardScreen
 from client.screens.screen_result import ScreenResult
 
@@ -46,8 +47,10 @@ class ManagerMenu(BaseScreen):
                     return ScreenResult.RETRY
                 return dash_result
             case "2":
-                self._renderer.render_message("Allocate Resource — coming in Phase 9.")
-                return ScreenResult.RETRY
+                alloc_result = await AllocateResourceScreen(*screen_args).run()
+                if alloc_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return alloc_result
             case "3":
                 self._renderer.render_message("My Projects — coming in Phase 13.")
                 return ScreenResult.RETRY

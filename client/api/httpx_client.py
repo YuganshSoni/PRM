@@ -18,7 +18,12 @@ from client.schemas.employee import (
     EmployeeListResponse,
     EmployeeUpsertResponse,
 )
-from client.schemas.allocation import AllocationListResponse
+from client.schemas.allocation import (
+    AllocationCreatedResponse,
+    AllocationEndedResponse,
+    AllocationListResponse,
+    ProjectAllocationListResponse,
+)
 from client.schemas.config import SystemConfigResponse, SystemConfigUpdatedResponse
 from client.schemas.dashboard import (
     DashboardEmployeeDetailResponse,
@@ -30,6 +35,7 @@ from client.schemas.milestone import (
     MilestoneUpdatedResponse,
 )
 from client.schemas.project import (
+    ManagedProjectListResponse,
     ProjectCreatedResponse,
     ProjectDetailResponse,
     ProjectListResponse,
@@ -473,6 +479,55 @@ class HttpxClient:
             authenticated=True,
         )
         return ResourceDashboardResponse.model_validate(response.json())
+
+    async def create_allocation(
+        self,
+        *,
+        employee_id: int,
+        project_id: int,
+        utilisation_percent: int,
+        from_date: str,
+        to_date: str,
+    ) -> AllocationCreatedResponse:
+        response = await self._request(
+            "POST",
+            "/allocations",
+            json={
+                "employee_id": employee_id,
+                "project_id": project_id,
+                "utilisation_percent": utilisation_percent,
+                "from_date": from_date,
+                "to_date": to_date,
+            },
+            authenticated=True,
+        )
+        return AllocationCreatedResponse.model_validate(response.json())
+
+    async def end_allocation(self, allocation_id: int) -> AllocationEndedResponse:
+        response = await self._request(
+            "POST",
+            f"/allocations/{allocation_id}/end",
+            authenticated=True,
+        )
+        return AllocationEndedResponse.model_validate(response.json())
+
+    async def list_project_allocations(
+        self, project_id: int
+    ) -> ProjectAllocationListResponse:
+        response = await self._request(
+            "GET",
+            f"/allocations/by-project/{project_id}",
+            authenticated=True,
+        )
+        return ProjectAllocationListResponse.model_validate(response.json())
+
+    async def list_managed_projects(self) -> ManagedProjectListResponse:
+        response = await self._request(
+            "GET",
+            "/projects/mine",
+            authenticated=True,
+        )
+        return ManagedProjectListResponse.model_validate(response.json())
 
     async def get_employee_detail(
         self, employee_id: int
