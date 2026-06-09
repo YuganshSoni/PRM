@@ -20,6 +20,10 @@ from client.schemas.employee import (
 )
 from client.schemas.allocation import AllocationListResponse
 from client.schemas.config import SystemConfigResponse, SystemConfigUpdatedResponse
+from client.schemas.dashboard import (
+    DashboardEmployeeDetailResponse,
+    ResourceDashboardResponse,
+)
 from client.schemas.milestone import (
     MilestoneListResponse,
     MilestoneResponse,
@@ -461,6 +465,24 @@ class HttpxClient:
             authenticated=True,
         )
         return AllocationListResponse.model_validate(response.json())
+
+    async def get_resource_dashboard(self) -> ResourceDashboardResponse:
+        response = await self._request(
+            "GET",
+            "/dashboard/resources",
+            authenticated=True,
+        )
+        return ResourceDashboardResponse.model_validate(response.json())
+
+    async def get_employee_detail(
+        self, employee_id: int
+    ) -> DashboardEmployeeDetailResponse:
+        response = await self._request(
+            "GET",
+            f"/dashboard/employees/{employee_id}",
+            authenticated=True,
+        )
+        return DashboardEmployeeDetailResponse.model_validate(response.json())
 
     def _auth_headers(self) -> dict[str, str]:
         try:
