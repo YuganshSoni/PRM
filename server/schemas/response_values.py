@@ -44,3 +44,13 @@ class SkillMessage(StrEnum):
     SKILL_ADDED = "Skill added."
     SKILL_UPDATED = "Proficiency updated."
     SKILL_REMOVED = "Skill removed."
+
+
+class ProjectMessage(StrEnum):
+    PROJECT_CREATED = "Project created."
+    PROJECT_UPDATED = "Project updated."
+
+
+class MilestoneMessage(StrEnum):
+    MILESTONE_ADDED = "Milestone added."
+    MILESTONE_UPDATED = "Milestone updated."
