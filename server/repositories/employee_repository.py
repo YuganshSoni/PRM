@@ -1,5 +1,6 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from server.models.employee import Employee
 from server.models.enums import EmployeeStatus
@@ -9,6 +10,14 @@ from server.repositories.base_repository import BaseRepository
 class EmployeeRepository(BaseRepository[Employee]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Employee)
+
+    async def get_by_id_with_user(self, employee_id: int) -> Employee | None:
+        result = await self._session.execute(
+            select(Employee)
+            .options(selectinload(Employee.user))
+            .where(Employee.id == employee_id)
+        )
+        return result.scalar_one_or_none()
 
     async def find_by_user_id(self, user_id: int) -> Employee | None:
         result = await self._session.execute(
