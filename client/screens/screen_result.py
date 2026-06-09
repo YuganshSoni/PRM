@@ -9,3 +9,4 @@ class ScreenResult(StrEnum):
     MENU = "menu"
     LOGOUT = "logout"
     RETRY = "retry"
+    BACK = "back"
