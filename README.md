@@ -38,7 +38,9 @@ uvicorn server.main:app --reload
 python -m client.main
 ```
 
-Screen 1 flows: start menu → login → forced password change (bootstrap admin) → role stub menu → logout.
+Screen 1 flows: start menu → login → forced password change (bootstrap admin) → role menu → logout.
+
+Admin (Screen 3): full admin panel with **Manage Users** (create, view, reset password, deactivate, reactivate). Other admin options are stubbed until Phases 5–7.
 
 - `GET /health` — liveness
 - `GET /health/db` — database connectivity
@@ -46,6 +48,12 @@ Screen 1 flows: start menu → login → forced password change (bootstrap admin
 - `POST /auth/change-password` — change password (Bearer token required)
 - `POST /auth/logout` — logout (Bearer token required)
 - `GET /auth/me` — current user profile (Bearer token required)
+- `POST /users` — create user account (Admin only)
+- `GET /users` — list users with active/inactive counts (Admin only)
+- `GET /users/lookup?identifier=` — find user by username or ID (Admin only)
+- `POST /users/{id}/reset-password` — reset temp password (Admin only)
+- `POST /users/{id}/deactivate` — deactivate user (Admin only)
+- `POST /users/{id}/reactivate` — reactivate user (Admin only)
 
 ### Auth example
 
