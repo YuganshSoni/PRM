@@ -135,3 +135,23 @@ class InvalidProjectStatusError(ValidationError):
 
 class InvalidStoryPointsError(ValidationError):
     pass
+
+
+class SystemConfigNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidSchedulerIntervalError(ValidationError):
+    pass
+
+
+class InvalidMaxWeeklyHoursError(ValidationError):
+    pass
+
+
+class InvalidLlmApiKeyError(ValidationError):
+    pass
+
+
+class NoConfigFieldsToUpdateError(ValidationError):
+    pass
