@@ -24,5 +24,6 @@ class Milestone(Base, TimestampMixin):
         String(20), default=MilestoneStatus.NOT_STARTED, index=True
     )
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    story_points: Mapped[int] = mapped_column(Integer, default=0)
 
     project: Mapped["Project"] = relationship(back_populates="milestones")

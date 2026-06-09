@@ -1,7 +1,7 @@
 from datetime import date
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, ForeignKey, String, Text
+from sqlalchemy import Date, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from server.models.base import Base, TimestampMixin
@@ -26,6 +26,7 @@ class Project(Base, TimestampMixin):
     manager_id: Mapped[int] = mapped_column(
         ForeignKey("employees.id", ondelete="RESTRICT"), index=True
     )
+    total_story_points: Mapped[int] = mapped_column(Integer, default=0)
 
     manager: Mapped["Employee"] = relationship(back_populates="managed_projects")
     milestones: Mapped[list["Milestone"]] = relationship(back_populates="project")
