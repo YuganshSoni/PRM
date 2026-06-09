@@ -5,7 +5,9 @@ from fastapi import FastAPI
 
 from server.core.database import get_database_manager
 from server.core.exception_handlers import ExceptionHandlerRegistrar
+from server.routers.allocation_router import AllocationRouter
 from server.routers.auth_router import AuthRouter
+from server.routers.config_router import ConfigRouter
 from server.routers.employee_router import EmployeeRouter
 from server.routers.health_router import HealthRouter
 from server.routers.milestone_router import MilestoneRouter
@@ -25,6 +27,8 @@ class ApplicationFactory:
         app.include_router(SkillRouter().router)
         app.include_router(ProjectRouter().router)
         app.include_router(MilestoneRouter().router)
+        app.include_router(ConfigRouter().router)
+        app.include_router(AllocationRouter().router)
         return app
 
     @asynccontextmanager

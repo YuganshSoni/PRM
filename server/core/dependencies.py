@@ -12,17 +12,21 @@ from server.core.password_policy import PasswordPolicy
 from server.core.security import PasswordHasher
 from server.models.enums import UserRole
 from server.models.user import User
+from server.core.api_key_masker import ApiKeyMasker
 from server.repositories.allocation_repository import AllocationRepository
 from server.repositories.employee_repository import EmployeeRepository
 from server.repositories.milestone_repository import MilestoneRepository
 from server.repositories.project_repository import ProjectRepository
 from server.repositories.skill_repository import SkillRepository
+from server.repositories.system_config_repository import SystemConfigRepository
 from server.repositories.user_repository import UserRepository
+from server.services.allocation_view_service import AllocationViewService
 from server.services.auth_service import AuthService
 from server.services.employee_service import EmployeeService
 from server.services.milestone_service import MilestoneService
 from server.services.project_service import ProjectService
 from server.services.skill_service import SkillService
+from server.services.system_config_service import SystemConfigService
 from server.services.user_service import UserService
 
 
@@ -182,3 +186,26 @@ async def get_milestone_service(
 
 
 dependency_provider.get_milestone_service = get_milestone_service
+
+
+async def get_system_config_service(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> SystemConfigService:
+    return SystemConfigService(
+        config_repository=SystemConfigRepository(session),
+        api_key_masker=ApiKeyMasker(),
+    )
+
+
+dependency_provider.get_system_config_service = get_system_config_service
+
+
+async def get_allocation_view_service(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> AllocationViewService:
+    return AllocationViewService(
+        allocation_repository=AllocationRepository(session),
+    )
+
+
+dependency_provider.get_allocation_view_service = get_allocation_view_service
