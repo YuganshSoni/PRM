@@ -1,6 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from server.models.enums import UserStatus
 from server.models.user import User
 from server.repositories.base_repository import BaseRepository
 
@@ -21,6 +22,30 @@ class UserRepository(BaseRepository[User]):
 
     async def find_by_id(self, user_id: int) -> User | None:
         return await self.get_by_id(user_id)
+
+    async def find_by_email(self, email: str) -> User | None:
+        result = await self._session.execute(
+            select(User).where(User.email == email)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_users(self, limit: int, offset: int) -> list[User]:
+        result = await self._session.execute(
+            select(User).order_by(User.id).limit(limit).offset(offset)
+        )
+        return list(result.scalars().all())
+
+    async def count_all(self) -> int:
+        result = await self._session.execute(select(func.count()).select_from(User))
+        return int(result.scalar_one())
+
+    async def count_by_status(self, status: UserStatus) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(User)
+            .where(User.status == status)
+        )
+        return int(result.scalar_one())
 
     async def save(self, user: User) -> User:
         self._session.add(user)

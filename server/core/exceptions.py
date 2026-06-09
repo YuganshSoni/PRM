@@ -51,3 +51,23 @@ class ForbiddenError(PrmError):
 
 class UserNotFoundError(PrmError):
     pass
+
+
+class DuplicateUsernameError(ConflictError):
+    pass
+
+
+class DuplicateEmailError(ConflictError):
+    pass
+
+
+class UserAlreadyInactiveError(ValidationError):
+    pass
+
+
+class UserAlreadyActiveError(ValidationError):
+    pass
+
+
+class SelfOperationForbiddenError(ValidationError):
+    pass
