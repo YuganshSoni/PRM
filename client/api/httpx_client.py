@@ -18,6 +18,8 @@ from client.schemas.employee import (
     EmployeeListResponse,
     EmployeeUpsertResponse,
 )
+from client.schemas.allocation import AllocationListResponse
+from client.schemas.config import SystemConfigResponse, SystemConfigUpdatedResponse
 from client.schemas.milestone import (
     MilestoneListResponse,
     MilestoneResponse,
@@ -416,6 +418,49 @@ class HttpxClient:
             authenticated=True,
         )
         return MilestoneUpdatedResponse.model_validate(response.json())
+
+    async def get_config(self) -> SystemConfigResponse:
+        response = await self._request("GET", "/config", authenticated=True)
+        return SystemConfigResponse.model_validate(response.json())
+
+    async def update_config(self, **fields: str | int) -> SystemConfigUpdatedResponse:
+        response = await self._request(
+            "PUT",
+            "/config",
+            json=fields,
+            authenticated=True,
+        )
+        return SystemConfigUpdatedResponse.model_validate(response.json())
+
+    async def list_allocations(
+        self,
+        *,
+        employee_id: int | None = None,
+        project_id: int | None = None,
+        employee_name: str | None = None,
+        project_name: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> AllocationListResponse:
+        params: dict[str, str] = {
+            "limit": str(limit),
+            "offset": str(offset),
+        }
+        if employee_id is not None:
+            params["employee_id"] = str(employee_id)
+        if project_id is not None:
+            params["project_id"] = str(project_id)
+        if employee_name:
+            params["employee_name"] = employee_name
+        if project_name:
+            params["project_name"] = project_name
+        response = await self._request(
+            "GET",
+            "/allocations",
+            params=params,
+            authenticated=True,
+        )
+        return AllocationListResponse.model_validate(response.json())
 
     def _auth_headers(self) -> dict[str, str]:
         try:

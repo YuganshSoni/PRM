@@ -1,8 +1,10 @@
 from datetime import datetime
 
 from client.exceptions import ApiRequestError, NetworkError
+from client.screens.admin.allocation_view_screen import AllocationViewScreen
 from client.screens.admin.employee_management_screen import EmployeeManagementScreen
 from client.screens.admin.project_management_screen import ProjectManagementScreen
+from client.screens.admin.system_config_screen import SystemConfigScreen
 from client.screens.admin.user_management_screen import UserManagementScreen
 from client.screens.base_screen import BaseScreen
 from client.screens.screen_result import ScreenResult
@@ -53,20 +55,20 @@ class AdminMenu(BaseScreen):
                     return ScreenResult.RETRY
                 return pm_result
             case "3":
-                self._renderer.render_message(
-                    "View All Allocations — available in Phase 7."
-                )
-                return ScreenResult.RETRY
+                av_result = await AllocationViewScreen(*screen_args).run()
+                if av_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return av_result
             case "4":
                 um_result = await UserManagementScreen(*screen_args).run()
                 if um_result == ScreenResult.BACK:
                     return ScreenResult.RETRY
                 return um_result
             case "5":
-                self._renderer.render_message(
-                    "System Configuration — available in Phase 7."
-                )
-                return ScreenResult.RETRY
+                sc_result = await SystemConfigScreen(*screen_args).run()
+                if sc_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return sc_result
             case "6":
                 return await self._logout()
             case _:
