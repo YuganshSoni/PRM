@@ -42,7 +42,7 @@ Screen 1 flows: start menu → login → forced password change (bootstrap admin
 
 Admin (Screen 3): **Manage Employees**, **Manage Projects**, **View All Allocations**, **Manage Users**, and **System Configuration**.
 
-Manager (Screen 4): **Resource Dashboard** (option 1). Options 2–5 stubbed until Phase 9+. Employee menu stubbed until Phase 10+.
+Manager (Screen 4): **Resource Dashboard** (option 1), **Allocate Resource** direct + end (option 2). Options 3–5 stubbed until Phase 11+. Employee menu stubbed until Phase 10+.
 
 - `GET /health` — liveness
 - `GET /health/db` — database connectivity
@@ -77,6 +77,10 @@ Manager (Screen 4): **Resource Dashboard** (option 1). Options 2–5 stubbed unt
 - `GET /allocations` — list active company-wide allocations (Admin only)
 - `GET /dashboard/resources` — manager team bench, active employees, stats (Manager only)
 - `GET /dashboard/employees/{id}` — team member drill-down with skills, allocations, tags (Manager only)
+- `GET /projects/mine` — manager-owned projects for allocation picker (Manager only)
+- `POST /allocations` — direct allocation for own-team employee (Manager only)
+- `GET /allocations/by-project/{project_id}` — active allocations on owned project (Manager only)
+- `POST /allocations/{id}/end` — end allocation; owner manager only (Manager only)
 
 Run migration after pull: `alembic upgrade head` (adds `employees.manager_id`, story point columns).
 
