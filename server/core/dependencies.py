@@ -14,6 +14,7 @@ from server.models.enums import UserRole
 from server.models.user import User
 from server.repositories.user_repository import UserRepository
 from server.services.auth_service import AuthService
+from server.services.user_service import UserService
 
 
 class DependencyProvider:
@@ -103,3 +104,19 @@ async def require_password_changed(
 
 
 dependency_provider.require_password_changed = require_password_changed
+
+
+async def get_user_service(
+    user_repository: Annotated[
+        UserRepository, Depends(dependency_provider.get_user_repository)
+    ],
+    auth_service: Annotated[AuthService, Depends(dependency_provider.get_auth_service)],
+) -> UserService:
+    return UserService(
+        user_repository=user_repository,
+        password_hasher=PasswordHasher(),
+        auth_service=auth_service,
+    )
+
+
+dependency_provider.get_user_service = get_user_service

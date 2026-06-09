@@ -7,6 +7,7 @@ from server.core.database import get_database_manager
 from server.core.exception_handlers import ExceptionHandlerRegistrar
 from server.routers.auth_router import AuthRouter
 from server.routers.health_router import HealthRouter
+from server.routers.user_router import UserRouter
 
 
 class ApplicationFactory:
@@ -15,6 +16,7 @@ class ApplicationFactory:
         ExceptionHandlerRegistrar().register(app)
         app.include_router(HealthRouter().router)
         app.include_router(AuthRouter().router)
+        app.include_router(UserRouter().router)
         return app
 
     @asynccontextmanager
