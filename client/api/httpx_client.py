@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 
 from client.config import ClientSettings
@@ -8,6 +10,12 @@ from client.schemas.auth import (
     ErrorBody,
     LoginResponse,
     LogoutResponse,
+)
+from client.schemas.user import (
+    UserActionResponse,
+    UserCreatedResponse,
+    UserListResponse,
+    UserSummaryResponse,
 )
 from client.session import Session, SessionManager
 from server.models.enums import UserRole
@@ -77,6 +85,75 @@ class HttpxClient:
         response = await self._request("GET", "/auth/me", authenticated=True)
         return CurrentUserResponse.model_validate(response.json())
 
+    async def create_user(
+        self,
+        full_name: str,
+        email: str,
+        username: str,
+        temporary_password: str,
+        role: str,
+    ) -> UserCreatedResponse:
+        response = await self._request(
+            "POST",
+            "/users",
+            json={
+                "full_name": full_name,
+                "email": email,
+                "username": username,
+                "temporary_password": temporary_password,
+                "role": role,
+            },
+            authenticated=True,
+        )
+        return UserCreatedResponse.model_validate(response.json())
+
+    async def list_users(
+        self, limit: int = 50, offset: int = 0
+    ) -> UserListResponse:
+        response = await self._request(
+            "GET",
+            "/users",
+            params={"limit": str(limit), "offset": str(offset)},
+            authenticated=True,
+        )
+        return UserListResponse.model_validate(response.json())
+
+    async def lookup_user(self, identifier: str) -> UserSummaryResponse:
+        response = await self._request(
+            "GET",
+            "/users/lookup",
+            params={"identifier": identifier},
+            authenticated=True,
+        )
+        return UserSummaryResponse.model_validate(response.json())
+
+    async def reset_password(
+        self, user_id: int, temporary_password: str
+    ) -> UserActionResponse:
+        response = await self._request(
+            "POST",
+            f"/users/{user_id}/reset-password",
+            json={"temporary_password": temporary_password},
+            authenticated=True,
+        )
+        return UserActionResponse.model_validate(response.json())
+
+    async def deactivate_user(self, user_id: int) -> UserActionResponse:
+        response = await self._request(
+            "POST",
+            f"/users/{user_id}/deactivate",
+            authenticated=True,
+        )
+        return UserActionResponse.model_validate(response.json())
+
+    async def reactivate_user(self, user_id: int) -> UserActionResponse:
+        response = await self._request(
+            "POST",
+            f"/users/{user_id}/reactivate",
+            authenticated=True,
+        )
+        return UserActionResponse.model_validate(response.json())
+
     def _auth_headers(self) -> dict[str, str]:
         try:
             token = self._session_manager.get_token()
@@ -89,7 +166,8 @@ class HttpxClient:
         method: str,
         path: str,
         *,
-        json: dict[str, str] | None = None,
+        json: dict[str, Any] | None = None,
+        params: dict[str, str] | None = None,
         authenticated: bool = False,
     ) -> httpx.Response:
         headers = self._auth_headers() if authenticated else {}
@@ -98,7 +176,9 @@ class HttpxClient:
                 base_url=self._settings.api_base_url,
                 timeout=self._settings.request_timeout_seconds,
             ) as client:
-                response = await client.request(method, path, json=json, headers=headers)
+                response = await client.request(
+                    method, path, json=json, params=params, headers=headers
+                )
         except httpx.RequestError as exc:
             raise NetworkError(
                 "Cannot reach server. Is it running?"
