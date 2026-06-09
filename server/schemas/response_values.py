@@ -54,3 +54,7 @@ class ProjectMessage(StrEnum):
 class MilestoneMessage(StrEnum):
     MILESTONE_ADDED = "Milestone added."
     MILESTONE_UPDATED = "Milestone updated."
+
+
+class ConfigMessage(StrEnum):
+    SETTINGS_UPDATED = "Settings updated."
