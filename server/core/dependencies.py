@@ -70,6 +70,9 @@ async def get_current_user(
     return user
 
 
+dependency_provider.get_current_user = get_current_user
+
+
 async def get_auth_service(
     user_repository: Annotated[
         UserRepository, Depends(dependency_provider.get_user_repository)
@@ -86,6 +89,9 @@ async def get_auth_service(
     )
 
 
+dependency_provider.get_auth_service = get_auth_service
+
+
 async def require_password_changed(
     user: Annotated[User, Depends(dependency_provider.get_current_user)],
 ) -> User:
@@ -96,6 +102,4 @@ async def require_password_changed(
     return user
 
 
-dependency_provider.get_current_user = get_current_user
-dependency_provider.get_auth_service = get_auth_service
 dependency_provider.require_password_changed = require_password_changed
