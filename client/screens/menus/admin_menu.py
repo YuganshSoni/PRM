@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from client.exceptions import ApiRequestError, NetworkError
+from client.screens.admin.employee_management_screen import EmployeeManagementScreen
 from client.screens.admin.user_management_screen import UserManagementScreen
 from client.screens.base_screen import BaseScreen
 from client.screens.screen_result import ScreenResult
@@ -41,10 +42,10 @@ class AdminMenu(BaseScreen):
 
         match option:
             case "1":
-                self._renderer.render_message(
-                    "Manage Employees — available in Phase 5."
-                )
-                return ScreenResult.RETRY
+                em_result = await EmployeeManagementScreen(*screen_args).run()
+                if em_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return em_result
             case "2":
                 self._renderer.render_message(
                     "Manage Projects — available in Phase 6."

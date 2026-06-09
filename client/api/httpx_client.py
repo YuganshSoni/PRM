@@ -11,6 +11,14 @@ from client.schemas.auth import (
     LoginResponse,
     LogoutResponse,
 )
+from client.schemas.employee import (
+    AssignManagerResponse,
+    EmployeeActionResponse,
+    EmployeeDetailResponse,
+    EmployeeListResponse,
+    EmployeeUpsertResponse,
+)
+from client.schemas.skill import SkillListResponse, SkillResponse
 from client.schemas.user import (
     UserActionResponse,
     UserCreatedResponse,
@@ -153,6 +161,125 @@ class HttpxClient:
             authenticated=True,
         )
         return UserActionResponse.model_validate(response.json())
+
+    async def update_employee_by_user(
+        self,
+        user_id: int,
+        full_name: str,
+        email: str,
+        department: str,
+        designation: str,
+    ) -> EmployeeUpsertResponse:
+        response = await self._request(
+            "PUT",
+            f"/employees/by-user/{user_id}",
+            json={
+                "full_name": full_name,
+                "email": email,
+                "department": department,
+                "designation": designation,
+            },
+            authenticated=True,
+        )
+        return EmployeeUpsertResponse.model_validate(response.json())
+
+    async def list_employees(
+        self,
+        *,
+        status: str | None = None,
+        department: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> EmployeeListResponse:
+        params: dict[str, str] = {
+            "limit": str(limit),
+            "offset": str(offset),
+        }
+        if status:
+            params["status"] = status
+        if department:
+            params["department"] = department
+        response = await self._request(
+            "GET",
+            "/employees",
+            params=params,
+            authenticated=True,
+        )
+        return EmployeeListResponse.model_validate(response.json())
+
+    async def get_employee(self, employee_id: int) -> EmployeeDetailResponse:
+        response = await self._request(
+            "GET",
+            f"/employees/{employee_id}",
+            authenticated=True,
+        )
+        return EmployeeDetailResponse.model_validate(response.json())
+
+    async def deactivate_employee(self, employee_id: int) -> EmployeeActionResponse:
+        response = await self._request(
+            "POST",
+            f"/employees/{employee_id}/deactivate",
+            authenticated=True,
+        )
+        return EmployeeActionResponse.model_validate(response.json())
+
+    async def assign_manager(
+        self, employee_user_id: int, manager_user_id: int
+    ) -> AssignManagerResponse:
+        response = await self._request(
+            "PUT",
+            "/employees/assign-manager",
+            json={
+                "employee_user_id": employee_user_id,
+                "manager_user_id": manager_user_id,
+            },
+            authenticated=True,
+        )
+        return AssignManagerResponse.model_validate(response.json())
+
+    async def list_employee_skills(self, employee_id: int) -> SkillListResponse:
+        response = await self._request(
+            "GET",
+            f"/employees/{employee_id}/skills",
+            authenticated=True,
+        )
+        return SkillListResponse.model_validate(response.json())
+
+    async def add_skill(
+        self,
+        employee_id: int,
+        skill_name: str,
+        category: str,
+        proficiency_level: str,
+    ) -> SkillResponse:
+        response = await self._request(
+            "POST",
+            f"/employees/{employee_id}/skills",
+            json={
+                "skill_name": skill_name,
+                "category": category,
+                "proficiency_level": proficiency_level,
+            },
+            authenticated=True,
+        )
+        return SkillResponse.model_validate(response.json())
+
+    async def update_skill_proficiency(
+        self, skill_id: int, proficiency_level: str
+    ) -> None:
+        await self._request(
+            "PUT",
+            f"/skills/{skill_id}",
+            json={"proficiency_level": proficiency_level},
+            authenticated=True,
+        )
+
+    async def remove_skill(self, skill_id: int) -> None:
+        await self._request(
+            "DELETE",
+            f"/skills/{skill_id}",
+            authenticated=True,
+        )
 
     def _auth_headers(self) -> dict[str, str]:
         try:
