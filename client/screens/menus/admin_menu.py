@@ -2,6 +2,7 @@ from datetime import datetime
 
 from client.exceptions import ApiRequestError, NetworkError
 from client.screens.admin.employee_management_screen import EmployeeManagementScreen
+from client.screens.admin.project_management_screen import ProjectManagementScreen
 from client.screens.admin.user_management_screen import UserManagementScreen
 from client.screens.base_screen import BaseScreen
 from client.screens.screen_result import ScreenResult
@@ -47,10 +48,10 @@ class AdminMenu(BaseScreen):
                     return ScreenResult.RETRY
                 return em_result
             case "2":
-                self._renderer.render_message(
-                    "Manage Projects — available in Phase 6."
-                )
-                return ScreenResult.RETRY
+                pm_result = await ProjectManagementScreen(*screen_args).run()
+                if pm_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return pm_result
             case "3":
                 self._renderer.render_message(
                     "View All Allocations — available in Phase 7."

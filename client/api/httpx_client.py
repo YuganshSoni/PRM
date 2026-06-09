@@ -18,6 +18,17 @@ from client.schemas.employee import (
     EmployeeListResponse,
     EmployeeUpsertResponse,
 )
+from client.schemas.milestone import (
+    MilestoneListResponse,
+    MilestoneResponse,
+    MilestoneUpdatedResponse,
+)
+from client.schemas.project import (
+    ProjectCreatedResponse,
+    ProjectDetailResponse,
+    ProjectListResponse,
+    ProjectUpdatedResponse,
+)
 from client.schemas.skill import SkillListResponse, SkillResponse
 from client.schemas.user import (
     UserActionResponse,
@@ -280,6 +291,131 @@ class HttpxClient:
             f"/skills/{skill_id}",
             authenticated=True,
         )
+
+    async def create_project(
+        self,
+        *,
+        name: str,
+        description: str | None,
+        start_date: str,
+        end_date: str,
+        status: str,
+        manager_id: int,
+        total_story_points: int,
+    ) -> ProjectCreatedResponse:
+        response = await self._request(
+            "POST",
+            "/projects",
+            json={
+                "name": name,
+                "description": description,
+                "start_date": start_date,
+                "end_date": end_date,
+                "status": status,
+                "manager_id": manager_id,
+                "total_story_points": total_story_points,
+            },
+            authenticated=True,
+        )
+        return ProjectCreatedResponse.model_validate(response.json())
+
+    async def list_projects(
+        self,
+        *,
+        status: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> ProjectListResponse:
+        params: dict[str, str] = {
+            "limit": str(limit),
+            "offset": str(offset),
+        }
+        if status:
+            params["status"] = status
+        response = await self._request(
+            "GET",
+            "/projects",
+            params=params,
+            authenticated=True,
+        )
+        return ProjectListResponse.model_validate(response.json())
+
+    async def get_project(self, project_id: int) -> ProjectDetailResponse:
+        response = await self._request(
+            "GET",
+            f"/projects/{project_id}",
+            authenticated=True,
+        )
+        return ProjectDetailResponse.model_validate(response.json())
+
+    async def update_project(
+        self,
+        project_id: int,
+        *,
+        name: str,
+        description: str | None,
+        start_date: str,
+        end_date: str,
+        status: str,
+        manager_id: int,
+        total_story_points: int,
+    ) -> ProjectUpdatedResponse:
+        response = await self._request(
+            "PUT",
+            f"/projects/{project_id}",
+            json={
+                "name": name,
+                "description": description,
+                "start_date": start_date,
+                "end_date": end_date,
+                "status": status,
+                "manager_id": manager_id,
+                "total_story_points": total_story_points,
+            },
+            authenticated=True,
+        )
+        return ProjectUpdatedResponse.model_validate(response.json())
+
+    async def list_project_milestones(
+        self, project_id: int
+    ) -> MilestoneListResponse:
+        response = await self._request(
+            "GET",
+            f"/projects/{project_id}/milestones",
+            authenticated=True,
+        )
+        return MilestoneListResponse.model_validate(response.json())
+
+    async def add_milestone(
+        self,
+        project_id: int,
+        *,
+        title: str,
+        due_date: str,
+        story_points: int,
+    ) -> MilestoneResponse:
+        response = await self._request(
+            "POST",
+            f"/projects/{project_id}/milestones",
+            json={
+                "title": title,
+                "due_date": due_date,
+                "story_points": story_points,
+            },
+            authenticated=True,
+        )
+        return MilestoneResponse.model_validate(response.json())
+
+    async def update_milestone_status(
+        self, milestone_id: int, status: str
+    ) -> MilestoneUpdatedResponse:
+        response = await self._request(
+            "PUT",
+            f"/milestones/{milestone_id}",
+            json={"status": status},
+            authenticated=True,
+        )
+        return MilestoneUpdatedResponse.model_validate(response.json())
 
     def _auth_headers(self) -> dict[str, str]:
         try:
