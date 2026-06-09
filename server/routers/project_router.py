@@ -9,12 +9,15 @@ from server.models.user import User
 from server.schemas.requests.project import CreateProjectRequest, UpdateProjectRequest
 from server.schemas.response_values import ProjectMessage
 from server.schemas.responses.project import (
+    ManagedProjectListResponse,
+    ManagedProjectSummaryResponse,
     ProjectCreatedResponse,
     ProjectDetailResponse,
     ProjectListResponse,
     ProjectSummaryResponse,
     ProjectUpdatedResponse,
 )
+from server.services.allocation_service import AllocationService
 from server.services.project_service import ProjectService
 
 
@@ -33,6 +36,12 @@ class ProjectRouter:
             self.list_projects,
             methods=["GET"],
             response_model=ProjectListResponse,
+        )
+        self.router.add_api_route(
+            "/mine",
+            self.list_managed_projects,
+            methods=["GET"],
+            response_model=ManagedProjectListResponse,
         )
         self.router.add_api_route(
             "/{project_id}",
@@ -83,6 +92,28 @@ class ProjectRouter:
             total=result.total,
             limit=limit,
             offset=offset,
+        )
+
+    async def list_managed_projects(
+        self,
+        _manager: Annotated[
+            User, Depends(dependency_provider.require_role(UserRole.MANAGER))
+        ],
+        __: Annotated[User, Depends(dependency_provider.require_password_changed)],
+        allocation_service: AllocationService = Depends(
+            dependency_provider.get_allocation_service
+        ),
+    ) -> ManagedProjectListResponse:
+        projects = await allocation_service.list_managed_projects(_manager)
+        return ManagedProjectListResponse(
+            items=[
+                ManagedProjectSummaryResponse(
+                    id=project.id,
+                    name=project.name,
+                    status=ProjectStatus(project.status),
+                )
+                for project in projects
+            ]
         )
 
     async def get_project(

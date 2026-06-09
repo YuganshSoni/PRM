@@ -21,6 +21,7 @@ from server.repositories.skill_repository import SkillRepository
 from server.repositories.system_config_repository import SystemConfigRepository
 from server.repositories.timesheet_repository import TimesheetRepository
 from server.repositories.user_repository import UserRepository
+from server.services.allocation_service import AllocationService
 from server.services.allocation_view_service import AllocationViewService
 from server.services.auth_service import AuthService
 from server.services.employee_service import EmployeeService
@@ -225,3 +226,16 @@ async def get_resource_dashboard_service(
 
 
 dependency_provider.get_resource_dashboard_service = get_resource_dashboard_service
+
+
+async def get_allocation_service(
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> AllocationService:
+    return AllocationService(
+        employee_repository=EmployeeRepository(session),
+        project_repository=ProjectRepository(session),
+        allocation_repository=AllocationRepository(session),
+    )
+
+
+dependency_provider.get_allocation_service = get_allocation_service
