@@ -40,7 +40,7 @@ python -m client.main
 
 Screen 1 flows: start menu → login → forced password change (bootstrap admin) → role menu → logout.
 
-Admin (Screen 3): **Manage Employees** (view/filter, update profile, deactivate, skills, assign manager) and **Manage Users** (create, view, reset password, deactivate, reactivate). Other admin options stubbed until Phases 6–7.
+Admin (Screen 3): **Manage Employees**, **Manage Projects** (create, view SP Done/Total, update incl. COMPLETED, milestones), and **Manage Users**. Other admin options stubbed until Phase 7.
 
 - `GET /health` — liveness
 - `GET /health/db` — database connectivity
@@ -63,8 +63,15 @@ Admin (Screen 3): **Manage Employees** (view/filter, update profile, deactivate,
 - `GET /employees/{id}/skills` — list skills (Admin only)
 - `PUT /skills/{id}` — update skill proficiency (Admin only)
 - `DELETE /skills/{id}` — remove skill (Admin only)
+- `POST /projects` — create project (Admin only)
+- `GET /projects` — list projects with SP Done/Total (Admin only)
+- `GET /projects/{id}` — project detail (Admin only)
+- `PUT /projects/{id}` — update project details (Admin only)
+- `POST /projects/{id}/milestones` — add milestone (Admin only)
+- `GET /projects/{id}/milestones` — list milestones with SP summary (Admin only)
+- `PUT /milestones/{id}` — update milestone status (Admin only)
 
-Run migration after pull: `alembic upgrade head` (adds `employees.manager_id`).
+Run migration after pull: `alembic upgrade head` (adds `employees.manager_id`, story point columns).
 
 ### Auth example
 
