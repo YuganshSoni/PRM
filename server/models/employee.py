@@ -29,8 +29,22 @@ class Employee(Base, TimestampMixin):
         String(20), default=EmployeeStatus.BENCH, index=True
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    manager_id: Mapped[int | None] = mapped_column(
+        ForeignKey("employees.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     user: Mapped["User"] = relationship(back_populates="employee")
+    manager: Mapped["Employee | None"] = relationship(
+        "Employee",
+        remote_side="Employee.id",
+        foreign_keys=[manager_id],
+        back_populates="direct_reports",
+    )
+    direct_reports: Mapped[list["Employee"]] = relationship(
+        "Employee",
+        back_populates="manager",
+        foreign_keys=[manager_id],
+    )
     skills: Mapped[list["EmployeeSkill"]] = relationship(back_populates="employee")
     allocations: Mapped[list["Allocation"]] = relationship(back_populates="employee")
     timesheets: Mapped[list["Timesheet"]] = relationship(back_populates="employee")
