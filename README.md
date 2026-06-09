@@ -40,7 +40,7 @@ python -m client.main
 
 Screen 1 flows: start menu → login → forced password change (bootstrap admin) → role menu → logout.
 
-Admin (Screen 3): full admin panel with **Manage Users** (create, view, reset password, deactivate, reactivate). Other admin options are stubbed until Phases 5–7.
+Admin (Screen 3): **Manage Employees** (view/filter, update profile, deactivate, skills, assign manager) and **Manage Users** (create, view, reset password, deactivate, reactivate). Other admin options stubbed until Phases 6–7.
 
 - `GET /health` — liveness
 - `GET /health/db` — database connectivity
@@ -54,6 +54,17 @@ Admin (Screen 3): full admin panel with **Manage Users** (create, view, reset pa
 - `POST /users/{id}/reset-password` — reset temp password (Admin only)
 - `POST /users/{id}/deactivate` — deactivate user (Admin only)
 - `POST /users/{id}/reactivate` — reactivate user (Admin only)
+- `PUT /employees/by-user/{user_id}` — create or update employee profile (Admin only)
+- `GET /employees` — list employees with bench/allocated counts (Admin only)
+- `GET /employees/{id}` — employee detail with active allocations (Admin only)
+- `POST /employees/{id}/deactivate` — deactivate employee cascade (Admin only)
+- `PUT /employees/assign-manager` — assign reporting manager (Admin only)
+- `POST /employees/{id}/skills` — add skill (Admin only)
+- `GET /employees/{id}/skills` — list skills (Admin only)
+- `PUT /skills/{id}` — update skill proficiency (Admin only)
+- `DELETE /skills/{id}` — remove skill (Admin only)
+
+Run migration after pull: `alembic upgrade head` (adds `employees.manager_id`).
 
 ### Auth example
 
