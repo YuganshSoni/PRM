@@ -155,3 +155,27 @@ class InvalidLlmApiKeyError(ValidationError):
 
 class NoConfigFieldsToUpdateError(ValidationError):
     pass
+
+
+class AllocationNotFoundError(NotFoundError):
+    pass
+
+
+class OverAllocationError(ValidationError):
+    pass
+
+
+class InvalidAllocationDatesError(ValidationError):
+    pass
+
+
+class InvalidProjectStatusForAllocationError(ValidationError):
+    pass
+
+
+class EmployeeNotAllocatableError(ValidationError):
+    pass
+
+
+class NotProjectOwnerError(ForbiddenError):
+    pass

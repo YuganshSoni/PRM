@@ -58,3 +58,8 @@ class MilestoneMessage(StrEnum):
 
 class ConfigMessage(StrEnum):
     SETTINGS_UPDATED = "Settings updated."
+
+
+class AllocationMessage(StrEnum):
+    ALLOCATION_CREATED = "Allocation saved."
+    ALLOCATION_ENDED = "Allocation ended."
