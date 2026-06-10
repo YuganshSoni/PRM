@@ -16,10 +16,21 @@ from server.models.employee import Employee
 from server.models.enums import EmployeeStatus, ProjectStatus
 from server.models.project import Project
 from server.models.user import User
+from decimal import Decimal
+
+from server.core.exceptions import EmployeeProfileNotFoundError, SystemConfigNotFoundError
+from server.core.week_utils import WeekCalculator
 from server.repositories.allocation_repository import AllocationRepository
 from server.repositories.employee_repository import EmployeeRepository
 from server.repositories.project_repository import ProjectRepository
+from server.repositories.system_config_repository import SystemConfigRepository
 from server.schemas.requests.allocation import CreateAllocationRequest
+from server.schemas.responses.allocation import (
+    MyAllocationListResponse,
+    MyAllocationSummaryResponse,
+    WeekAllocationContextResponse,
+    WeekProjectAllocationResponse,
+)
 
 
 class AllocationService:
@@ -32,10 +43,12 @@ class AllocationService:
         employee_repository: EmployeeRepository,
         project_repository: ProjectRepository,
         allocation_repository: AllocationRepository,
+        system_config_repository: SystemConfigRepository,
     ) -> None:
         self._employee_repository = employee_repository
         self._project_repository = project_repository
         self._allocation_repository = allocation_repository
+        self._system_config_repository = system_config_repository
 
     async def create_allocation(
         self, dto: CreateAllocationRequest, user: User
@@ -140,6 +153,70 @@ class AllocationService:
     async def list_managed_projects(self, user: User) -> list[Project]:
         manager_employee_id = await self._resolve_manager_employee_id(user)
         return await self._project_repository.find_by_manager_id(manager_employee_id)
+
+    async def list_my_allocations(
+        self, user: User, *, week_start: date | None = None
+    ) -> MyAllocationListResponse | WeekAllocationContextResponse:
+        employee_id = await self._resolve_employee_id(user)
+
+        if week_start is not None:
+            WeekCalculator.validate_monday(week_start)
+            config = await self._system_config_repository.get()
+            if config is None:
+                raise SystemConfigNotFoundError("System configuration not found")
+
+            allocations = (
+                await self._allocation_repository.find_active_for_employee_in_week(
+                    employee_id, week_start
+                )
+            )
+            max_weekly = Decimal(config.max_weekly_hours)
+            projects = [
+                WeekProjectAllocationResponse(
+                    project_id=allocation.project_id,
+                    project_name=allocation.project.name,
+                    utilisation_percent=allocation.utilisation_percent,
+                    max_hours=float(
+                        Decimal(allocation.utilisation_percent)
+                        / Decimal(100)
+                        * max_weekly
+                    ),
+                )
+                for allocation in allocations
+            ]
+            return WeekAllocationContextResponse(
+                week_start=week_start,
+                max_weekly_hours=config.max_weekly_hours,
+                projects=projects,
+            )
+
+        allocations = await self._allocation_repository.find_active_by_employee(
+            employee_id
+        )
+        total_utilisation = sum(
+            allocation.utilisation_percent for allocation in allocations
+        )
+        return MyAllocationListResponse(
+            items=[
+                MyAllocationSummaryResponse(
+                    project_name=allocation.project.name,
+                    utilisation_percent=allocation.utilisation_percent,
+                    from_date=allocation.from_date,
+                    to_date=allocation.to_date,
+                    status="ACTIVE",
+                )
+                for allocation in allocations
+            ],
+            total_utilisation_percent=total_utilisation,
+        )
+
+    async def _resolve_employee_id(self, user: User) -> int:
+        employee = await self._employee_repository.find_by_user_id(user.id)
+        if employee is None:
+            raise EmployeeProfileNotFoundError(
+                "Employee user does not have an employee profile"
+            )
+        return employee.id
 
     async def _resolve_manager_employee_id(self, user: User) -> int:
         manager_employee = await self._employee_repository.find_by_user_id(user.id)
