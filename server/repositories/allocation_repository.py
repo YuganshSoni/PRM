@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -63,6 +63,22 @@ class AllocationRepository(BaseRepository[Allocation]):
                 Allocation.to_date >= today,
             )
             .options(selectinload(Allocation.employee))
+            .order_by(Allocation.id)
+        )
+        return list(result.scalars().all())
+
+    async def find_active_for_employee_in_week(
+        self, employee_id: int, week_start: date
+    ) -> list[Allocation]:
+        week_end = week_start + timedelta(days=6)
+        result = await self._session.execute(
+            select(Allocation)
+            .where(
+                Allocation.employee_id == employee_id,
+                Allocation.from_date <= week_end,
+                Allocation.to_date >= week_start,
+            )
+            .options(selectinload(Allocation.project))
             .order_by(Allocation.id)
         )
         return list(result.scalars().all())
