@@ -2,6 +2,7 @@ from datetime import date, timedelta
 
 from sqlalchemy import case, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from server.models.activity_tag import ActivityTag
 from server.models.timesheet import Timesheet
@@ -13,6 +14,41 @@ from server.repositories.base_repository import BaseRepository
 class TimesheetRepository(BaseRepository[Timesheet]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Timesheet)
+
+    async def find_by_employee_and_week(
+        self, employee_id: int, week_start: date
+    ) -> Timesheet | None:
+        result = await self._session.execute(
+            select(Timesheet).where(
+                Timesheet.employee_id == employee_id,
+                Timesheet.week_start == week_start,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def list_by_employee(self, employee_id: int) -> list[Timesheet]:
+        result = await self._session.execute(
+            select(Timesheet)
+            .where(Timesheet.employee_id == employee_id)
+            .order_by(Timesheet.week_start.desc())
+        )
+        return list(result.scalars().all())
+
+    async def get_by_id_with_entries(self, timesheet_id: int) -> Timesheet | None:
+        result = await self._session.execute(
+            select(Timesheet)
+            .where(Timesheet.id == timesheet_id)
+            .options(
+                selectinload(Timesheet.entries).selectinload(TimesheetEntry.project),
+                selectinload(Timesheet.entries)
+                .selectinload(TimesheetEntry.tags)
+                .selectinload(TimesheetEntryTag.activity_tag),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def save(self, timesheet: Timesheet) -> Timesheet:
+        return await self.add(timesheet)
 
     async def find_recent_activity_tags(
         self, employee_id: int, *, weeks: int = 4
