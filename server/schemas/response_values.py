@@ -63,3 +63,7 @@ class ConfigMessage(StrEnum):
 class AllocationMessage(StrEnum):
     ALLOCATION_CREATED = "Allocation saved."
     ALLOCATION_ENDED = "Allocation ended."
+
+
+class TimesheetMessage(StrEnum):
+    TIMESHEET_SUBMITTED = "Timesheet submitted successfully."

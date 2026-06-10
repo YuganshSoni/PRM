@@ -179,3 +179,47 @@ class EmployeeNotAllocatableError(ValidationError):
 
 class NotProjectOwnerError(ForbiddenError):
     pass
+
+
+class EmployeeProfileNotFoundError(NotFoundError):
+    pass
+
+
+class TimesheetNotFoundError(NotFoundError):
+    pass
+
+
+class DuplicateTimesheetError(ConflictError):
+    pass
+
+
+class FutureWeekError(ValidationError):
+    pass
+
+
+class InvalidWeekStartError(ValidationError):
+    pass
+
+
+class HoursExceededError(ValidationError):
+    pass
+
+
+class TotalHoursExceededError(ValidationError):
+    pass
+
+
+class NotAllocatedToProjectError(ValidationError):
+    pass
+
+
+class InvalidActivityTagError(ValidationError):
+    pass
+
+
+class OtherTagRequiresLabelError(ValidationError):
+    pass
+
+
+class NoTimesheetEntriesError(ValidationError):
+    pass
