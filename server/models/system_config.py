@@ -15,6 +15,12 @@ class SystemConfig(Base):
     llm_api_key: Mapped[str] = mapped_column(String(500), default="")
     scheduler_interval_hours: Mapped[int] = mapped_column(Integer, default=4)
     max_weekly_hours: Mapped[int] = mapped_column(Integer, default=40)
+    smtp_host: Mapped[str] = mapped_column(String(255), default="")
+    smtp_port: Mapped[int] = mapped_column(Integer, default=587)
+    smtp_username: Mapped[str] = mapped_column(String(255), default="")
+    smtp_password: Mapped[str] = mapped_column(String(500), default="")
+    smtp_from_email: Mapped[str] = mapped_column(String(255), default="")
+    email_enabled: Mapped[bool] = mapped_column(default=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

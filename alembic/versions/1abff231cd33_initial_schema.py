@@ -1,8 +1,8 @@
-"""initial schema
+"""Initial schema
 
-Revision ID: 7f125d93f175
+Revision ID: 1abff231cd33
 Revises: 
-Create Date: 2026-06-08 10:10:38.713141
+Create Date: 2026-06-11 14:25:47.919798
 
 """
 from typing import Sequence, Union
@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = '7f125d93f175'
+revision: str = '1abff231cd33'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,6 +27,36 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
+    op.create_table('departments',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_departments_name'), 'departments', ['name'], unique=True)
+    op.create_table('designations',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_designations_name'), 'designations', ['name'], unique=True)
+    op.create_table('resource_statuses',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_resource_statuses_name'), 'resource_statuses', ['name'], unique=True)
+    op.create_table('roles',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_roles_name'), 'roles', ['name'], unique=True)
+    op.create_table('skill_categories',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_skill_categories_name'), 'skill_categories', ['name'], unique=True)
     op.create_table('system_config',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('llm_provider', sa.String(length=20), nullable=False),
@@ -36,52 +66,55 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('skills',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('category_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['category_id'], ['skill_categories.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_skills_category_id'), 'skills', ['category_id'], unique=False)
+    op.create_index(op.f('ix_skills_name'), 'skills', ['name'], unique=True)
     op.create_table('users',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('username', sa.String(length=64), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('full_name', sa.String(length=150), nullable=False),
     sa.Column('password_hash', sa.String(length=255), nullable=False),
-    sa.Column('role', sa.String(length=20), nullable=False),
+    sa.Column('role_id', sa.Integer(), nullable=False),
     sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('force_password_change', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
+    op.create_index(op.f('ix_users_role_id'), 'users', ['role_id'], unique=False)
     op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
-    op.create_table('employees',
+    op.create_table('resources',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('full_name', sa.String(length=150), nullable=False),
-    sa.Column('email', sa.String(length=255), nullable=False),
-    sa.Column('department', sa.String(length=100), nullable=False),
-    sa.Column('designation', sa.String(length=100), nullable=False),
-    sa.Column('status', sa.String(length=20), nullable=False),
+    sa.Column('department_id', sa.Integer(), nullable=False),
+    sa.Column('designation_id', sa.Integer(), nullable=False),
+    sa.Column('resource_status_id', sa.Integer(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('manager_id', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['department_id'], ['departments.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['designation_id'], ['designations.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['manager_id'], ['resources.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['resource_status_id'], ['resource_statuses.id'], ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')
     )
-    op.create_index(op.f('ix_employees_department'), 'employees', ['department'], unique=False)
-    op.create_index(op.f('ix_employees_is_active'), 'employees', ['is_active'], unique=False)
-    op.create_index(op.f('ix_employees_status'), 'employees', ['status'], unique=False)
-    op.create_table('employee_skills',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('employee_id', sa.Integer(), nullable=False),
-    sa.Column('skill_name', sa.String(length=100), nullable=False),
-    sa.Column('category', sa.String(length=20), nullable=False),
-    sa.Column('proficiency_level', sa.String(length=20), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('employee_id', 'skill_name')
-    )
-    op.create_index(op.f('ix_employee_skills_category'), 'employee_skills', ['category'], unique=False)
-    op.create_index(op.f('ix_employee_skills_employee_id'), 'employee_skills', ['employee_id'], unique=False)
+    op.create_index(op.f('ix_resources_department_id'), 'resources', ['department_id'], unique=False)
+    op.create_index(op.f('ix_resources_designation_id'), 'resources', ['designation_id'], unique=False)
+    op.create_index(op.f('ix_resources_is_active'), 'resources', ['is_active'], unique=False)
+    op.create_index(op.f('ix_resources_manager_id'), 'resources', ['manager_id'], unique=False)
+    op.create_index(op.f('ix_resources_resource_status_id'), 'resources', ['resource_status_id'], unique=False)
     op.create_table('projects',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
@@ -90,32 +123,46 @@ def upgrade() -> None:
     sa.Column('end_date', sa.Date(), nullable=False),
     sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('manager_id', sa.Integer(), nullable=False),
+    sa.Column('total_story_points', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['manager_id'], ['employees.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['manager_id'], ['resources.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_projects_end_date'), 'projects', ['end_date'], unique=False)
     op.create_index(op.f('ix_projects_manager_id'), 'projects', ['manager_id'], unique=False)
     op.create_index(op.f('ix_projects_status'), 'projects', ['status'], unique=False)
+    op.create_table('resource_skills',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('resource_id', sa.Integer(), nullable=False),
+    sa.Column('skill_id', sa.Integer(), nullable=False),
+    sa.Column('proficiency_level', sa.String(length=20), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['resource_id'], ['resources.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['skill_id'], ['skills.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_resource_skills_resource_id'), 'resource_skills', ['resource_id'], unique=False)
+    op.create_index(op.f('ix_resource_skills_skill_id'), 'resource_skills', ['skill_id'], unique=False)
     op.create_table('timesheets',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('employee_id', sa.Integer(), nullable=False),
+    sa.Column('resource_id', sa.Integer(), nullable=False),
     sa.Column('week_start', sa.Date(), nullable=False),
     sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('total_hours', sa.Numeric(precision=5, scale=2), nullable=False),
     sa.Column('submitted_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['resource_id'], ['resources.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('employee_id', 'week_start')
+    sa.UniqueConstraint('resource_id', 'week_start')
     )
-    op.create_index(op.f('ix_timesheets_employee_id'), 'timesheets', ['employee_id'], unique=False)
+    op.create_index(op.f('ix_timesheets_resource_id'), 'timesheets', ['resource_id'], unique=False)
     op.create_index(op.f('ix_timesheets_status'), 'timesheets', ['status'], unique=False)
     op.create_index(op.f('ix_timesheets_week_start'), 'timesheets', ['week_start'], unique=False)
     op.create_table('allocations',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('employee_id', sa.Integer(), nullable=False),
+    sa.Column('resource_id', sa.Integer(), nullable=False),
     sa.Column('project_id', sa.Integer(), nullable=False),
     sa.Column('utilisation_percent', sa.Integer(), nullable=False),
     sa.Column('from_date', sa.Date(), nullable=False),
@@ -124,12 +171,12 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.CheckConstraint('from_date < to_date', name='ck_allocations_dates'),
     sa.CheckConstraint('utilisation_percent >= 1 AND utilisation_percent <= 100', name='ck_allocations_utilisation'),
-    sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['resource_id'], ['resources.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_allocations_employee_id'), 'allocations', ['employee_id'], unique=False)
     op.create_index(op.f('ix_allocations_project_id'), 'allocations', ['project_id'], unique=False)
+    op.create_index(op.f('ix_allocations_resource_id'), 'allocations', ['resource_id'], unique=False)
     op.create_table('milestones',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('project_id', sa.Integer(), nullable=False),
@@ -137,6 +184,7 @@ def upgrade() -> None:
     sa.Column('due_date', sa.Date(), nullable=False),
     sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('sort_order', sa.Integer(), nullable=False),
+    sa.Column('story_points', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ondelete='CASCADE'),
@@ -209,27 +257,43 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_milestones_project_id'), table_name='milestones')
     op.drop_index(op.f('ix_milestones_due_date'), table_name='milestones')
     op.drop_table('milestones')
+    op.drop_index(op.f('ix_allocations_resource_id'), table_name='allocations')
     op.drop_index(op.f('ix_allocations_project_id'), table_name='allocations')
-    op.drop_index(op.f('ix_allocations_employee_id'), table_name='allocations')
     op.drop_table('allocations')
     op.drop_index(op.f('ix_timesheets_week_start'), table_name='timesheets')
     op.drop_index(op.f('ix_timesheets_status'), table_name='timesheets')
-    op.drop_index(op.f('ix_timesheets_employee_id'), table_name='timesheets')
+    op.drop_index(op.f('ix_timesheets_resource_id'), table_name='timesheets')
     op.drop_table('timesheets')
+    op.drop_index(op.f('ix_resource_skills_skill_id'), table_name='resource_skills')
+    op.drop_index(op.f('ix_resource_skills_resource_id'), table_name='resource_skills')
+    op.drop_table('resource_skills')
     op.drop_index(op.f('ix_projects_status'), table_name='projects')
     op.drop_index(op.f('ix_projects_manager_id'), table_name='projects')
     op.drop_index(op.f('ix_projects_end_date'), table_name='projects')
     op.drop_table('projects')
-    op.drop_index(op.f('ix_employee_skills_employee_id'), table_name='employee_skills')
-    op.drop_index(op.f('ix_employee_skills_category'), table_name='employee_skills')
-    op.drop_table('employee_skills')
-    op.drop_index(op.f('ix_employees_status'), table_name='employees')
-    op.drop_index(op.f('ix_employees_is_active'), table_name='employees')
-    op.drop_index(op.f('ix_employees_department'), table_name='employees')
-    op.drop_table('employees')
+    op.drop_index(op.f('ix_resources_resource_status_id'), table_name='resources')
+    op.drop_index(op.f('ix_resources_manager_id'), table_name='resources')
+    op.drop_index(op.f('ix_resources_is_active'), table_name='resources')
+    op.drop_index(op.f('ix_resources_designation_id'), table_name='resources')
+    op.drop_index(op.f('ix_resources_department_id'), table_name='resources')
+    op.drop_table('resources')
     op.drop_index(op.f('ix_users_username'), table_name='users')
+    op.drop_index(op.f('ix_users_role_id'), table_name='users')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
+    op.drop_index(op.f('ix_skills_name'), table_name='skills')
+    op.drop_index(op.f('ix_skills_category_id'), table_name='skills')
+    op.drop_table('skills')
     op.drop_table('system_config')
+    op.drop_index(op.f('ix_skill_categories_name'), table_name='skill_categories')
+    op.drop_table('skill_categories')
+    op.drop_index(op.f('ix_roles_name'), table_name='roles')
+    op.drop_table('roles')
+    op.drop_index(op.f('ix_resource_statuses_name'), table_name='resource_statuses')
+    op.drop_table('resource_statuses')
+    op.drop_index(op.f('ix_designations_name'), table_name='designations')
+    op.drop_table('designations')
+    op.drop_index(op.f('ix_departments_name'), table_name='departments')
+    op.drop_table('departments')
     op.drop_table('activity_tags')
     # ### end Alembic commands ###
