@@ -24,25 +24,25 @@ class ResourceDashboardScreen(BaseScreen):
         print()
 
         bench_count = len(dashboard.bench_employees)
-        print(f"ON BENCH  ({bench_count} employees available)")
+        print(f"ON BENCH  ({bench_count} resources available)")
         print("─" * 62)
         print(f"{'ID':<6}{'Name':<18}{'Department':<14}{'Skills'}")
-        for employee in dashboard.bench_employees:
-            skills = ", ".join(employee.skills)
+        for resource in dashboard.bench_employees:
+            skills = ", ".join(resource.skills)
             print(
-                f"{employee.id:<6}{employee.full_name:<18}"
-                f"{employee.department:<14}{skills}"
+                f"{resource.id:<6}{resource.full_name:<18}"
+                f"{resource.department:<14}{skills}"
             )
         print()
 
         print("ACTIVE EMPLOYEES")
         print("─" * 62)
         print(f"{'ID':<6}{'Name':<18}{'Alloc %':<10}{'Availability'}")
-        for employee in dashboard.active_employees:
+        for resource in dashboard.active_employees:
             print(
-                f"{employee.id:<6}{employee.full_name:<18}"
-                f"{employee.utilisation_percent}%{'':<6}"
-                f"{employee.availability_label}"
+                f"{resource.id:<6}{resource.full_name:<18}"
+                f"{resource.utilisation_percent}%{'':<6}"
+                f"{resource.availability_label}"
             )
         print()
         print("─" * 62)
@@ -51,7 +51,7 @@ class ResourceDashboardScreen(BaseScreen):
             f"Partial: {dashboard.stats.partial_count}"
         )
         print()
-        print("[D] Drill into employee details     [B] Back")
+        print("[D] Drill into resource details     [B] Back")
         print()
 
         option = self._reader.read_option("Enter option: ").upper()
@@ -63,9 +63,9 @@ class ResourceDashboardScreen(BaseScreen):
         return ScreenResult.RETRY
 
     async def _drill_down(self) -> ScreenResult:
-        employee_id_raw = self._reader.read_line("Enter Employee ID: ").strip()
+        employee_id_raw = self._reader.read_line("Enter Resource ID: ").strip()
         if not employee_id_raw.isdigit():
-            self._renderer.render_error("Employee ID must be a number.")
+            self._renderer.render_error("Resource ID must be a number.")
             return await self._render_dashboard()
 
         employee_id = int(employee_id_raw)

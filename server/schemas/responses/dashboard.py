@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
-from server.models.enums import EmployeeStatus
+from server.models.enums import ResourceStatusEnum
 
 
 class BenchEmployeeSummary(BaseModel):
@@ -25,8 +25,8 @@ class DashboardStatsResponse(BaseModel):
 
 
 class ResourceDashboardResponse(BaseModel):
-    bench_employees: list[BenchEmployeeSummary]
-    active_employees: list[ActiveEmployeeSummary]
+    bench_resources: list[BenchEmployeeSummary]
+    active_resources: list[ActiveEmployeeSummary]
     stats: DashboardStatsResponse
     month_label: str
 
@@ -44,7 +44,7 @@ class DashboardEmployeeDetailResponse(BaseModel):
     id: int
     full_name: str
     department: str
-    status: EmployeeStatus
+    status: ResourceStatusEnum
     utilisation_percent: int
     skills: list[str]
     active_allocations: list[DashboardAllocationSummary]

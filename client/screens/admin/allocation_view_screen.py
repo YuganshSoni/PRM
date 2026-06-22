@@ -34,7 +34,7 @@ class AllocationViewScreen(BaseScreen):
             return ScreenResult.RETRY
 
         print(
-            f"{'Employee':<18}{'Project':<18}{'%':<8}"
+            f"{'Resource':<18}{'Project':<18}{'%':<8}"
             f"{'From':<12}{'To'}"
         )
         print("─" * 62)
@@ -49,7 +49,7 @@ class AllocationViewScreen(BaseScreen):
         print("─" * 62)
         print(f"Total Active Allocations: {allocation_list.total}")
         print()
-        print("[F] Filter by Employee / Project     [B] Back")
+        print("[F] Filter by Resource / Project     [B] Back")
         print()
 
         option = self._reader.read_option("Enter option: ").upper()
@@ -61,11 +61,11 @@ class AllocationViewScreen(BaseScreen):
         return ScreenResult.RETRY
 
     async def _filter(self) -> ScreenResult:
-        print("Filter by (1) Employee  (2) Project")
+        print("Filter by (1) Resource  (2) Project")
         choice = self._reader.read_line("Enter choice: ").strip()
         if choice == "1":
             value = self._reader.read_line(
-                "Enter employee name or ID: "
+                "Enter resource name or ID: "
             ).strip()
             if not value:
                 self._renderer.render_error("Filter value is required.")

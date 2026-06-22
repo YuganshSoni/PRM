@@ -4,6 +4,7 @@ from sqlalchemy.orm import selectinload
 
 from server.models.enums import ProjectStatus
 from server.models.project import Project
+from server.models.resource import Resource
 from server.repositories.base_repository import BaseRepository
 
 
@@ -14,7 +15,9 @@ class ProjectRepository(BaseRepository[Project]):
     async def get_by_id_with_manager(self, project_id: int) -> Project | None:
         result = await self._session.execute(
             select(Project)
-            .options(selectinload(Project.manager))
+            .options(
+                selectinload(Project.manager).selectinload(Resource.user),
+            )
             .where(Project.id == project_id)
         )
         return result.scalar_one_or_none()
@@ -28,7 +31,9 @@ class ProjectRepository(BaseRepository[Project]):
     ) -> list[Project]:
         query = (
             select(Project)
-            .options(selectinload(Project.manager))
+            .options(
+                selectinload(Project.manager).selectinload(Resource.user),
+            )
             .order_by(Project.id)
             .limit(limit)
             .offset(offset)
@@ -49,6 +54,14 @@ class ProjectRepository(BaseRepository[Project]):
         result = await self._session.execute(
             select(Project)
             .where(Project.manager_id == manager_id)
+            .order_by(Project.id)
+        )
+        return list(result.scalars().all())
+
+    async def find_active_projects(self) -> list[Project]:
+        result = await self._session.execute(
+            select(Project)
+            .where(Project.status == ProjectStatus.ACTIVE)
             .order_by(Project.id)
         )
         return list(result.scalars().all())

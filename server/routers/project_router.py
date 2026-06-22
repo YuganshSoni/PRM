@@ -11,14 +11,21 @@ from server.schemas.response_values import ProjectMessage
 from server.schemas.responses.project import (
     ManagedProjectListResponse,
     ManagedProjectSummaryResponse,
+    ManagerMilestoneResponse,
+    ManagerProjectAllocationResponse,
+    ManagerProjectDetailResponse,
     ProjectCreatedResponse,
     ProjectDetailResponse,
     ProjectListResponse,
+    ProjectRiskFlagResponse,
     ProjectSummaryResponse,
     ProjectUpdatedResponse,
 )
-from server.services.allocation_service import AllocationService
-from server.services.project_service import ProjectService
+from server.services.project_service import (
+    ManagerProjectDetailResult,
+    ProjectService,
+)
+from server.services.resource_mapper import ResourceMapper
 
 
 class ProjectRouter:
@@ -42,6 +49,12 @@ class ProjectRouter:
             self.list_managed_projects,
             methods=["GET"],
             response_model=ManagedProjectListResponse,
+        )
+        self.router.add_api_route(
+            "/mine/{project_id}",
+            self.get_manager_project_detail,
+            methods=["GET"],
+            response_model=ManagerProjectDetailResponse,
         )
         self.router.add_api_route(
             "/{project_id}",
@@ -100,21 +113,36 @@ class ProjectRouter:
             User, Depends(dependency_provider.require_role(UserRole.MANAGER))
         ],
         __: Annotated[User, Depends(dependency_provider.require_password_changed)],
-        allocation_service: AllocationService = Depends(
-            dependency_provider.get_allocation_service
-        ),
+        project_service: ProjectService = Depends(dependency_provider.get_project_service),
     ) -> ManagedProjectListResponse:
-        projects = await allocation_service.list_managed_projects(_manager)
+        result = await project_service.list_by_manager(_manager)
         return ManagedProjectListResponse(
             items=[
                 ManagedProjectSummaryResponse(
-                    id=project.id,
-                    name=project.name,
-                    status=ProjectStatus(project.status),
+                    id=row.id,
+                    name=row.name,
+                    status=row.status,
+                    end_date=row.end_date,
+                    health_status=row.health_status,
+                    computed_at=row.computed_at,
                 )
-                for project in projects
+                for row in result.items
             ]
         )
+
+    async def get_manager_project_detail(
+        self,
+        project_id: int,
+        _manager: Annotated[
+            User, Depends(dependency_provider.require_role(UserRole.MANAGER))
+        ],
+        __: Annotated[User, Depends(dependency_provider.require_password_changed)],
+        project_service: ProjectService = Depends(dependency_provider.get_project_service),
+    ) -> ManagerProjectDetailResponse:
+        detail = await project_service.get_manager_project_detail(
+            _manager, project_id
+        )
+        return self._to_manager_detail(detail)
 
     async def get_project(
         self,
@@ -144,7 +172,7 @@ class ProjectRouter:
         return ProjectSummaryResponse(
             id=project.id,
             name=project.name,
-            manager_name=project.manager.full_name,
+            manager_name=ResourceMapper.full_name(project.manager),
             end_date=project.end_date,
             status=ProjectStatus(project.status),
             story_points_done=story_points_done,
@@ -160,6 +188,48 @@ class ProjectRouter:
             end_date=project.end_date,
             status=ProjectStatus(project.status),
             manager_id=project.manager_id,
-            manager_name=project.manager.full_name,
+            manager_name=ResourceMapper.full_name(project.manager),
             total_story_points=project.total_story_points,
+        )
+
+    @staticmethod
+    def _to_manager_detail(
+        detail: ManagerProjectDetailResult,
+    ) -> ManagerProjectDetailResponse:
+        return ManagerProjectDetailResponse(
+            id=detail.id,
+            name=detail.name,
+            end_date=detail.end_date,
+            status=detail.status,
+            health_status=detail.health_status,
+            computed_at=detail.computed_at,
+            risk_flags=[
+                ProjectRiskFlagResponse(
+                    flag_text=flag.flag_text,
+                    is_positive=flag.is_positive,
+                    sort_order=flag.sort_order,
+                )
+                for flag in detail.risk_flags
+            ],
+            milestones=[
+                ManagerMilestoneResponse(
+                    id=milestone.id,
+                    title=milestone.title,
+                    due_date=milestone.due_date,
+                    story_points=milestone.story_points,
+                    status=milestone.status,
+                    sort_order=milestone.sort_order,
+                    is_overdue=milestone.is_overdue,
+                )
+                for milestone in detail.milestones
+            ],
+            allocations=[
+                ManagerProjectAllocationResponse(
+                    resource_name=allocation.resource_name,
+                    utilisation_percent=allocation.utilisation_percent,
+                    from_date=allocation.from_date,
+                    to_date=allocation.to_date,
+                )
+                for allocation in detail.allocations
+            ],
         )

@@ -17,25 +17,25 @@ class AllocationViewService:
     async def list_allocations(
         self,
         *,
-        employee_id: int | None,
+        resource_id: int | None,
         project_id: int | None,
-        employee_name: str | None,
+        resource_name: str | None,
         project_name: str | None,
         limit: int,
         offset: int,
     ) -> AllocationListResult:
         items = await self._allocation_repository.list_active(
-            employee_id=employee_id,
+            resource_id=resource_id,
             project_id=project_id,
-            employee_name=employee_name,
+            resource_name=resource_name,
             project_name=project_name,
             limit=limit,
             offset=offset,
         )
         total = await self._allocation_repository.count_active(
-            employee_id=employee_id,
+            resource_id=resource_id,
             project_id=project_id,
-            employee_name=employee_name,
+            resource_name=resource_name,
             project_name=project_name,
         )
         return AllocationListResult(items=items, total=total)

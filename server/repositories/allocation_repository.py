@@ -5,8 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from server.models.allocation import Allocation
-from server.models.employee import Employee
 from server.models.project import Project
+from server.models.resource import Resource
+from server.models.user import User
 from server.repositories.base_repository import BaseRepository
 
 
@@ -14,29 +15,29 @@ class AllocationRepository(BaseRepository[Allocation]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Allocation)
 
-    async def find_active_by_team(self, manager_employee_id: int) -> list[Allocation]:
+    async def find_active_by_team(self, manager_resource_id: int) -> list[Allocation]:
         today = date.today()
         result = await self._session.execute(
             select(Allocation)
-            .join(Employee, Allocation.employee_id == Employee.id)
+            .join(Resource, Allocation.resource_id == Resource.id)
             .where(
-                Employee.manager_id == manager_employee_id,
+                Resource.manager_id == manager_resource_id,
                 Allocation.to_date >= today,
             )
             .options(
-                selectinload(Allocation.employee),
+                selectinload(Allocation.resource).selectinload(Resource.user),
                 selectinload(Allocation.project),
             )
-            .order_by(Allocation.employee_id, Allocation.id)
+            .order_by(Allocation.resource_id, Allocation.id)
         )
         return list(result.scalars().unique().all())
 
     async def find_overlapping(
-        self, employee_id: int, from_date: date, to_date: date
+        self, resource_id: int, from_date: date, to_date: date
     ) -> list[Allocation]:
         result = await self._session.execute(
             select(Allocation).where(
-                Allocation.employee_id == employee_id,
+                Allocation.resource_id == resource_id,
                 Allocation.from_date <= to_date,
                 Allocation.to_date >= from_date,
             )
@@ -48,7 +49,7 @@ class AllocationRepository(BaseRepository[Allocation]):
             select(Allocation)
             .where(Allocation.id == allocation_id)
             .options(
-                selectinload(Allocation.employee),
+                selectinload(Allocation.resource).selectinload(Resource.user),
                 selectinload(Allocation.project).selectinload(Project.manager),
             )
         )
@@ -60,21 +61,24 @@ class AllocationRepository(BaseRepository[Allocation]):
             select(Allocation)
             .where(
                 Allocation.project_id == project_id,
+                Allocation.from_date <= today,
                 Allocation.to_date >= today,
             )
-            .options(selectinload(Allocation.employee))
+            .options(
+                selectinload(Allocation.resource).selectinload(Resource.user),
+            )
             .order_by(Allocation.id)
         )
         return list(result.scalars().all())
 
-    async def find_active_for_employee_in_week(
-        self, employee_id: int, week_start: date
+    async def find_active_for_resource_in_week(
+        self, resource_id: int, week_start: date
     ) -> list[Allocation]:
         week_end = week_start + timedelta(days=6)
         result = await self._session.execute(
             select(Allocation)
             .where(
-                Allocation.employee_id == employee_id,
+                Allocation.resource_id == resource_id,
                 Allocation.from_date <= week_end,
                 Allocation.to_date >= week_start,
             )
@@ -83,12 +87,65 @@ class AllocationRepository(BaseRepository[Allocation]):
         )
         return list(result.scalars().all())
 
-    async def find_active_by_employee(self, employee_id: int) -> list[Allocation]:
+    async def find_on_manager_projects_in_week(
+        self, manager_resource_id: int, week_start: date
+    ) -> list[Allocation]:
+        week_end = week_start + timedelta(days=6)
+        result = await self._session.execute(
+            select(Allocation)
+            .join(Project, Allocation.project_id == Project.id)
+            .where(
+                Project.manager_id == manager_resource_id,
+                Allocation.from_date <= week_end,
+                Allocation.to_date >= week_start,
+            )
+            .options(
+                selectinload(Allocation.resource).selectinload(Resource.user),
+                selectinload(Allocation.project),
+            )
+            .order_by(Allocation.resource_id, Allocation.project_id)
+        )
+        return list(result.scalars().all())
+
+    async def find_all_active(self) -> list[Allocation]:
+        today = date.today()
+        result = await self._session.execute(
+            select(Allocation).where(Allocation.to_date >= today)
+        )
+        return list(result.scalars().all())
+
+    async def find_overlapping_week(self, week_start: date) -> list[Allocation]:
+        week_end = week_start + timedelta(days=6)
+        result = await self._session.execute(
+            select(Allocation).where(
+                Allocation.from_date <= week_end,
+                Allocation.to_date >= week_start,
+            )
+        )
+        return list(result.scalars().all())
+
+    async def find_active_for_project_in_week(
+        self, project_id: int, week_start: date
+    ) -> list[Allocation]:
+        week_end = week_start + timedelta(days=6)
+        result = await self._session.execute(
+            select(Allocation)
+            .where(
+                Allocation.project_id == project_id,
+                Allocation.from_date <= week_end,
+                Allocation.to_date >= week_start,
+            )
+            .options(selectinload(Allocation.resource).selectinload(Resource.user))
+            .order_by(Allocation.id)
+        )
+        return list(result.scalars().all())
+
+    async def find_active_by_resource(self, resource_id: int) -> list[Allocation]:
         today = date.today()
         result = await self._session.execute(
             select(Allocation)
             .where(
-                Allocation.employee_id == employee_id,
+                Allocation.resource_id == resource_id,
                 Allocation.to_date >= today,
             )
             .options(selectinload(Allocation.project))
@@ -99,22 +156,22 @@ class AllocationRepository(BaseRepository[Allocation]):
     async def list_active(
         self,
         *,
-        employee_id: int | None,
+        resource_id: int | None,
         project_id: int | None,
-        employee_name: str | None,
+        resource_name: str | None,
         project_name: str | None,
         limit: int,
         offset: int,
     ) -> list[Allocation]:
         query = self._active_query(
-            employee_id=employee_id,
+            resource_id=resource_id,
             project_id=project_id,
-            employee_name=employee_name,
+            resource_name=resource_name,
             project_name=project_name,
         )
         query = (
             query.options(
-                selectinload(Allocation.employee),
+                selectinload(Allocation.resource).selectinload(Resource.user),
                 selectinload(Allocation.project),
             )
             .order_by(Allocation.id)
@@ -127,15 +184,15 @@ class AllocationRepository(BaseRepository[Allocation]):
     async def count_active(
         self,
         *,
-        employee_id: int | None,
+        resource_id: int | None,
         project_id: int | None,
-        employee_name: str | None,
+        resource_name: str | None,
         project_name: str | None,
     ) -> int:
         query = self._active_query(
-            employee_id=employee_id,
+            resource_id=resource_id,
             project_id=project_id,
-            employee_name=employee_name,
+            resource_name=resource_name,
             project_name=project_name,
         )
         count_query = select(func.count()).select_from(query.subquery())
@@ -145,21 +202,23 @@ class AllocationRepository(BaseRepository[Allocation]):
     def _active_query(
         self,
         *,
-        employee_id: int | None,
+        resource_id: int | None,
         project_id: int | None,
-        employee_name: str | None,
+        resource_name: str | None,
         project_name: str | None,
     ):
         today = date.today()
         query = select(Allocation).where(Allocation.to_date >= today)
 
-        if employee_id is not None:
-            query = query.where(Allocation.employee_id == employee_id)
+        if resource_id is not None:
+            query = query.where(Allocation.resource_id == resource_id)
         if project_id is not None:
             query = query.where(Allocation.project_id == project_id)
-        if employee_name:
-            query = query.join(Allocation.employee).where(
-                Employee.full_name.ilike(f"%{employee_name}%")
+        if resource_name:
+            query = (
+                query.join(Allocation.resource)
+                .join(Resource.user)
+                .where(User.full_name.ilike(f"%{resource_name}%"))
             )
         if project_name:
             query = query.join(Allocation.project).where(

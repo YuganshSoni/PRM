@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BenchEmployeeSummary(BaseModel):
@@ -23,8 +23,14 @@ class DashboardStatsResponse(BaseModel):
 
 
 class ResourceDashboardResponse(BaseModel):
-    bench_employees: list[BenchEmployeeSummary]
-    active_employees: list[ActiveEmployeeSummary]
+    model_config = ConfigDict(populate_by_name=True)
+
+    bench_employees: list[BenchEmployeeSummary] = Field(
+        validation_alias="bench_resources"
+    )
+    active_employees: list[ActiveEmployeeSummary] = Field(
+        validation_alias="active_resources"
+    )
     stats: DashboardStatsResponse
     month_label: str
 

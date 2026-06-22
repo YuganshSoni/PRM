@@ -3,8 +3,6 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
-from server.schemas.response_values import TimesheetMessage
-
 
 class TimesheetSummaryResponse(BaseModel):
     id: int
@@ -33,7 +31,7 @@ class TimesheetDetailResponse(BaseModel):
 
 class TimesheetSubmittedResponse(BaseModel):
     id: int
-    message: TimesheetMessage
+    message: str
     week_start: date
     total_hours: Decimal
     status: str

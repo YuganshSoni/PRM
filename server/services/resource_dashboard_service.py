@@ -7,12 +7,12 @@ from server.core.exceptions import (
     ManagerProfileNotFoundError,
 )
 from server.models.allocation import Allocation
-from server.models.employee import Employee
-from server.models.employee_skill import EmployeeSkill
-from server.models.enums import EmployeeStatus
+from server.models.enums import ResourceStatusEnum
+from server.models.resource import Resource
+from server.models.resource_skill import ResourceSkill
 from server.models.user import User
 from server.repositories.allocation_repository import AllocationRepository
-from server.repositories.employee_repository import EmployeeRepository
+from server.repositories.resource_repository import ResourceRepository
 from server.repositories.skill_repository import SkillRepository
 from server.repositories.timesheet_repository import TimesheetRepository
 from server.schemas.responses.dashboard import (
@@ -23,49 +23,50 @@ from server.schemas.responses.dashboard import (
     DashboardStatsResponse,
     ResourceDashboardResponse,
 )
+from server.services.resource_mapper import ResourceMapper
 
 
 class ResourceDashboardService:
     def __init__(
         self,
-        employee_repository: EmployeeRepository,
+        resource_repository: ResourceRepository,
         allocation_repository: AllocationRepository,
         skill_repository: SkillRepository,
         timesheet_repository: TimesheetRepository,
     ) -> None:
-        self._employee_repository = employee_repository
+        self._resource_repository = resource_repository
         self._allocation_repository = allocation_repository
         self._skill_repository = skill_repository
         self._timesheet_repository = timesheet_repository
 
     async def get_resource_dashboard(self, user: User) -> ResourceDashboardResponse:
-        manager_employee_id = await self._resolve_manager_employee_id(user)
+        manager_resource_id = await self._resolve_manager_resource_id(user)
 
-        bench_employees = await self._employee_repository.find_by_manager_and_status(
-            manager_employee_id,
-            EmployeeStatus.BENCH,
+        bench_resources = await self._resource_repository.find_by_manager_and_status(
+            manager_resource_id,
+            ResourceStatusEnum.BENCH,
             load_skills=True,
         )
         team_allocations = await self._allocation_repository.find_active_by_team(
-            manager_employee_id
+            manager_resource_id
         )
-        utilisation_by_employee = self._sum_utilisation_by_employee(team_allocations)
+        utilisation_by_resource = self._sum_utilisation_by_resource(team_allocations)
 
-        active_employees: list[ActiveEmployeeSummary] = []
+        active_resources: list[ActiveEmployeeSummary] = []
         partial_count = 0
-        for employee_id in sorted(utilisation_by_employee):
-            total_util = utilisation_by_employee[employee_id]
+        for resource_id in sorted(utilisation_by_resource):
+            total_util = utilisation_by_resource[resource_id]
             if total_util <= 0:
                 continue
-            employee = next(
-                allocation.employee
+            resource = next(
+                allocation.resource
                 for allocation in team_allocations
-                if allocation.employee_id == employee_id
+                if allocation.resource_id == resource_id
             )
-            active_employees.append(
+            active_resources.append(
                 ActiveEmployeeSummary(
-                    id=employee.id,
-                    full_name=employee.full_name,
+                    id=resource.id,
+                    full_name=ResourceMapper.full_name(resource),
                     utilisation_percent=total_util,
                     availability_label=self._availability_label(total_util),
                 )
@@ -74,50 +75,50 @@ class ResourceDashboardService:
                 partial_count += 1
 
         return ResourceDashboardResponse(
-            bench_employees=[
+            bench_resources=[
                 BenchEmployeeSummary(
-                    id=employee.id,
-                    full_name=employee.full_name,
-                    department=employee.department,
-                    skills=self._skill_names(employee.skills),
+                    id=resource.id,
+                    full_name=ResourceMapper.full_name(resource),
+                    department=ResourceMapper.department_name(resource),
+                    skills=self._skill_names(resource.skills),
                 )
-                for employee in bench_employees
+                for resource in bench_resources
             ],
-            active_employees=active_employees,
+            active_resources=active_resources,
             stats=DashboardStatsResponse(
-                bench_count=len(bench_employees),
+                bench_count=len(bench_resources),
                 partial_count=partial_count,
             ),
             month_label=datetime.now().strftime("%B %Y"),
         )
 
-    async def get_employee_detail(
-        self, employee_id: int, user: User
+    async def get_resource_detail(
+        self, resource_id: int, user: User
     ) -> DashboardEmployeeDetailResponse:
-        manager_employee_id = await self._resolve_manager_employee_id(user)
+        manager_resource_id = await self._resolve_manager_resource_id(user)
 
-        employee = await self._employee_repository.get_by_id_with_user(employee_id)
-        if employee is None:
-            raise EmployeeNotFoundError("Employee not found")
-        if employee.manager_id != manager_employee_id:
-            raise ForbiddenError("Employee not in your team")
+        resource = await self._resource_repository.get_by_id_with_user(resource_id)
+        if resource is None:
+            raise EmployeeNotFoundError("Resource not found")
+        if resource.manager_id != manager_resource_id:
+            raise ForbiddenError("Resource not in your team")
 
-        skills = await self._skill_repository.find_by_employee_id(employee_id)
-        allocations = await self._allocation_repository.find_active_by_employee(
-            employee_id
+        skills = await self._skill_repository.find_by_resource_id(resource_id)
+        allocations = await self._allocation_repository.find_active_by_resource(
+            resource_id
         )
         total_util = sum(allocation.utilisation_percent for allocation in allocations)
         recent_tags = await self._timesheet_repository.find_recent_activity_tags(
-            employee_id
+            resource_id
         )
 
         return DashboardEmployeeDetailResponse(
-            id=employee.id,
-            full_name=employee.full_name,
-            department=employee.department,
-            status=EmployeeStatus(employee.status),
+            id=resource.id,
+            full_name=ResourceMapper.full_name(resource),
+            department=ResourceMapper.department_name(resource),
+            status=ResourceMapper.status(resource),
             utilisation_percent=total_util,
-            skills=[skill.skill_name for skill in skills],
+            skills=[ResourceMapper.skill_name(skill) for skill in skills],
             active_allocations=[
                 DashboardAllocationSummary(
                     project_name=allocation.project.name,
@@ -130,21 +131,21 @@ class ResourceDashboardService:
             recent_activity_tags=recent_tags,
         )
 
-    async def _resolve_manager_employee_id(self, user: User) -> int:
-        manager_employee = await self._employee_repository.find_by_user_id(user.id)
-        if manager_employee is None:
+    async def _resolve_manager_resource_id(self, user: User) -> int:
+        manager_resource = await self._resource_repository.find_by_user_id(user.id)
+        if manager_resource is None:
             raise ManagerProfileNotFoundError(
-                "Manager user does not have an employee profile"
+                "Manager user does not have an resource profile"
             )
-        return manager_employee.id
+        return manager_resource.id
 
     @staticmethod
-    def _sum_utilisation_by_employee(
+    def _sum_utilisation_by_resource(
         allocations: list[Allocation],
     ) -> dict[int, int]:
         totals: dict[int, int] = defaultdict(int)
         for allocation in allocations:
-            totals[allocation.employee_id] += allocation.utilisation_percent
+            totals[allocation.resource_id] += allocation.utilisation_percent
         return dict(totals)
 
     @staticmethod
@@ -154,5 +155,5 @@ class ResourceDashboardService:
         return f"{100 - total_util}% free"
 
     @staticmethod
-    def _skill_names(skills: list[EmployeeSkill]) -> list[str]:
-        return [skill.skill_name for skill in skills]
+    def _skill_names(skills: list[ResourceSkill]) -> list[str]:
+        return [ResourceMapper.skill_name(skill) for skill in skills]

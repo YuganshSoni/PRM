@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -56,7 +56,49 @@ class ManagedProjectSummaryResponse(BaseModel):
     id: int
     name: str
     status: str
+    end_date: date
+    health_status: str | None
+    computed_at: datetime | None
 
 
 class ManagedProjectListResponse(BaseModel):
     items: list[ManagedProjectSummaryResponse]
+
+
+class ProjectRiskFlagResponse(BaseModel):
+    flag_text: str
+    is_positive: bool
+    sort_order: int
+
+
+class ManagerMilestoneResponse(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
+    id: int
+    title: str
+    due_date: date
+    story_points: int
+    status: str
+    sort_order: int
+    is_overdue: bool
+
+
+class ManagerProjectAllocationResponse(BaseModel):
+    resource_name: str
+    utilisation_percent: int
+    from_date: date
+    to_date: date
+
+
+class ManagerProjectDetailResponse(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
+    id: int
+    name: str
+    end_date: date
+    status: str
+    health_status: str | None
+    computed_at: datetime | None
+    risk_flags: list[ProjectRiskFlagResponse]
+    milestones: list[ManagerMilestoneResponse]
+    allocations: list[ManagerProjectAllocationResponse]

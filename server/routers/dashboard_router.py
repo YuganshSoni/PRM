@@ -22,8 +22,8 @@ class DashboardRouter:
             response_model=ResourceDashboardResponse,
         )
         self.router.add_api_route(
-            "/employees/{employee_id}",
-            self.get_employee_detail,
+            "/resources/{resource_id}",
+            self.get_resource_detail,
             methods=["GET"],
             response_model=DashboardEmployeeDetailResponse,
         )
@@ -40,9 +40,9 @@ class DashboardRouter:
     ) -> ResourceDashboardResponse:
         return await dashboard_service.get_resource_dashboard(_manager)
 
-    async def get_employee_detail(
+    async def get_resource_detail(
         self,
-        employee_id: int,
+        resource_id: int,
         _manager: Annotated[
             User, Depends(dependency_provider.require_role(UserRole.MANAGER))
         ],
@@ -51,4 +51,4 @@ class DashboardRouter:
             dependency_provider.get_resource_dashboard_service
         ),
     ) -> DashboardEmployeeDetailResponse:
-        return await dashboard_service.get_employee_detail(employee_id, _manager)
+        return await dashboard_service.get_resource_detail(resource_id, _manager)
