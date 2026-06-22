@@ -1,0 +1,261 @@
+class PrmError(Exception):
+    def __init__(self, message: str, *, code: str | None = None) -> None:
+        super().__init__(message)
+        self.message = message
+        self.code = code or type(self).__name__
+
+
+class NotFoundError(PrmError):
+    pass
+
+
+class ConflictError(PrmError):
+    pass
+
+
+class ValidationError(PrmError):
+    pass
+
+
+class DatabaseUnavailableError(PrmError):
+    pass
+
+
+class WeakPasswordError(PrmError):
+    pass
+
+
+class PasswordMismatchError(PrmError):
+    pass
+
+
+class InvalidCredentialsError(PrmError):
+    pass
+
+
+class AccountInactiveError(PrmError):
+    pass
+
+
+class InvalidTokenError(PrmError):
+    pass
+
+
+class TokenExpiredError(PrmError):
+    pass
+
+
+class ForbiddenError(PrmError):
+    pass
+
+
+class UserNotFoundError(PrmError):
+    pass
+
+
+class DuplicateUsernameError(ConflictError):
+    pass
+
+
+class DuplicateEmailError(ConflictError):
+    pass
+
+
+class UserAlreadyInactiveError(ValidationError):
+    pass
+
+
+class UserAlreadyActiveError(ValidationError):
+    pass
+
+
+class SelfOperationForbiddenError(ValidationError):
+    pass
+
+
+class EmployeeNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidUserRoleForEmployeeError(ValidationError):
+    pass
+
+
+class EmployeeAlreadyInactiveError(ValidationError):
+    pass
+
+
+class ManagerUserNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidManagerRoleError(ValidationError):
+    pass
+
+
+class ManagerProfileNotFoundError(NotFoundError):
+    pass
+
+
+class SelfManagerAssignmentError(ValidationError):
+    pass
+
+
+class DuplicateSkillError(ConflictError):
+    pass
+
+
+class SkillNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidSkillCategoryEnumError(ValidationError):
+    pass
+
+
+class ProjectNotFoundError(NotFoundError):
+    pass
+
+
+class MilestoneNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidProjectManagerError(ValidationError):
+    pass
+
+
+class InvalidProjectDatesError(ValidationError):
+    pass
+
+
+class InvalidProjectStatusError(ValidationError):
+    pass
+
+
+class InvalidStoryPointsError(ValidationError):
+    pass
+
+
+class SystemConfigNotFoundError(NotFoundError):
+    pass
+
+
+class InvalidSchedulerIntervalError(ValidationError):
+    pass
+
+
+class InvalidMaxWeeklyHoursError(ValidationError):
+    pass
+
+
+class InvalidLlmApiKeyError(ValidationError):
+    pass
+
+
+class NoConfigFieldsToUpdateError(ValidationError):
+    pass
+
+
+class AllocationNotFoundError(NotFoundError):
+    pass
+
+
+class OverAllocationError(ValidationError):
+    pass
+
+
+class InvalidAllocationDatesError(ValidationError):
+    pass
+
+
+class InvalidProjectStatusForAllocationError(ValidationError):
+    pass
+
+
+class EmployeeNotAllocatableError(ValidationError):
+    pass
+
+
+class NotProjectOwnerError(ForbiddenError):
+    pass
+
+
+class EmployeeProfileNotFoundError(NotFoundError):
+    pass
+
+
+class TimesheetNotFoundError(NotFoundError):
+    pass
+
+
+class DuplicateTimesheetError(ConflictError):
+    pass
+
+
+class FutureWeekError(ValidationError):
+    pass
+
+
+class InvalidWeekStartError(ValidationError):
+    pass
+
+
+class HoursExceededError(ValidationError):
+    pass
+
+
+class TotalHoursExceededError(ValidationError):
+    pass
+
+
+class NotAllocatedToProjectError(ValidationError):
+    pass
+
+
+class InvalidActivityTagError(ValidationError):
+    pass
+
+
+class OtherTagRequiresLabelError(ValidationError):
+    pass
+
+
+class NoTimesheetEntriesError(ValidationError):
+    pass
+
+
+class ResourceStatusNotFoundError(NotFoundError):
+    pass
+
+
+class SchedulerJobError(PrmError):
+    pass
+
+
+class LlmNotConfiguredError(PrmError):
+    pass
+
+
+class LlmInvocationError(PrmError):
+    pass
+
+
+class InvalidSkillMatchRequestError(ValidationError):
+    pass
+
+
+class InvalidTeamBuildRequestError(ValidationError):
+    pass
+
+
+class TimesheetSubmissionFrozenError(ValidationError):
+    pass
+
+
+class ComplianceRecordNotFoundError(NotFoundError):
+    pass
+
+
+class BulkAllocationValidationError(ValidationError):
+    pass
