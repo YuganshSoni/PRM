@@ -5,6 +5,7 @@ import jwt
 
 from server.core.config import Settings
 from server.core.exceptions import InvalidTokenError, TokenExpiredError
+from server.core.user_role import user_role_name
 from server.models.user import User
 
 
@@ -28,7 +29,7 @@ class JwtTokenService:
         payload = {
             "sub": str(user.id),
             "username": user.username,
-            "role": user.role,
+            "role": user_role_name(user),
             "force_password_change": user.force_password_change,
             "iat": int(now.timestamp()),
             "exp": int(expires.timestamp()),

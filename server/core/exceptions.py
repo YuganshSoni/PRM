@@ -109,7 +109,7 @@ class SkillNotFoundError(NotFoundError):
     pass
 
 
-class InvalidSkillCategoryError(ValidationError):
+class InvalidSkillCategoryEnumError(ValidationError):
     pass
 
 
@@ -222,4 +222,40 @@ class OtherTagRequiresLabelError(ValidationError):
 
 
 class NoTimesheetEntriesError(ValidationError):
+    pass
+
+
+class ResourceStatusNotFoundError(NotFoundError):
+    pass
+
+
+class SchedulerJobError(PrmError):
+    pass
+
+
+class LlmNotConfiguredError(PrmError):
+    pass
+
+
+class LlmInvocationError(PrmError):
+    pass
+
+
+class InvalidSkillMatchRequestError(ValidationError):
+    pass
+
+
+class InvalidTeamBuildRequestError(ValidationError):
+    pass
+
+
+class TimesheetSubmissionFrozenError(ValidationError):
+    pass
+
+
+class ComplianceRecordNotFoundError(NotFoundError):
+    pass
+
+
+class BulkAllocationValidationError(ValidationError):
     pass

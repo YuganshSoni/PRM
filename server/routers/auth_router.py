@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from server.core.dependencies import dependency_provider
+from server.core.user_role import user_role_enum
 from server.models.enums import UserRole
 from server.models.user import User
 from server.schemas.requests.auth import ChangePasswordRequest, LoginRequest
@@ -51,7 +52,7 @@ class AuthRouter:
         return LoginResponse(
             access_token=result.access_token,
             token_type=TokenType.BEARER,
-            role=UserRole(result.user.role),
+            role=user_role_enum(result.user),
             force_password_change=result.user.force_password_change,
             full_name=result.user.full_name,
         )
@@ -68,7 +69,7 @@ class AuthRouter:
         return ChangePasswordResponse(
             access_token=result.access_token,
             token_type=TokenType.BEARER,
-            role=UserRole(result.user.role),
+            role=user_role_enum(result.user),
             force_password_change=result.user.force_password_change,
             message=AuthMessage.PASSWORD_UPDATED,
         )
@@ -86,6 +87,6 @@ class AuthRouter:
         return CurrentUserResponse(
             id=user.id,
             username=user.username,
-            role=UserRole(user.role),
+            role=user_role_enum(user),
             force_password_change=user.force_password_change,
         )

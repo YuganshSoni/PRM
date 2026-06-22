@@ -1,16 +1,28 @@
+from dataclasses import dataclass
+
 from server.core.api_key_masker import ApiKeyMasker
+from server.core.llm_config_resolver import resolve_llm_credentials
 from server.core.exceptions import (
     InvalidLlmApiKeyError,
     InvalidMaxWeeklyHoursError,
     InvalidSchedulerIntervalError,
+    LlmNotConfiguredError,
     NoConfigFieldsToUpdateError,
     SystemConfigNotFoundError,
 )
 from server.models.enums import LlmProvider
 from server.models.system_config import SystemConfig
 from server.repositories.system_config_repository import SystemConfigRepository
+from server.scheduler.registry import get_scheduler_manager
 from server.schemas.requests.config import UpdateSystemConfigRequest
 from server.schemas.responses.config import SystemConfigResponse
+
+
+@dataclass(frozen=True)
+class LlmConfig:
+    provider: LlmProvider
+    api_key: str
+    max_weekly_hours: int
 
 
 class SystemConfigService:
@@ -30,6 +42,18 @@ class SystemConfigService:
     async def get_config(self) -> SystemConfigResponse:
         config = await self._require_config()
         return self._to_response(config)
+
+    async def get_llm_config(self) -> LlmConfig:
+        config = await self._require_config()
+        resolved = resolve_llm_credentials(config)
+        if resolved is None:
+            raise LlmNotConfiguredError("LLM API key is not configured")
+        provider, api_key = resolved
+        return LlmConfig(
+            provider=provider,
+            api_key=api_key,
+            max_weekly_hours=config.max_weekly_hours,
+        )
 
     async def update_config(self, dto: UpdateSystemConfigRequest) -> SystemConfig:
         if not dto.model_fields_set:
@@ -53,7 +77,14 @@ class SystemConfigService:
             self._validate_max_weekly_hours(dto.max_weekly_hours)
             config.max_weekly_hours = dto.max_weekly_hours
 
-        return await self._config_repository.save(config)
+        saved = await self._config_repository.save(config)
+
+        if dto.scheduler_interval_hours is not None:
+            manager = get_scheduler_manager()
+            if manager is not None:
+                manager.reschedule(dto.scheduler_interval_hours)
+
+        return saved
 
     async def _require_config(self) -> SystemConfig:
         config = await self._config_repository.get()
