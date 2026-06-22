@@ -1,29 +1,24 @@
 from enum import StrEnum
 
-
 class UserRole(StrEnum):
     ADMIN = "ADMIN"
     MANAGER = "MANAGER"
-    EMPLOYEE = "EMPLOYEE"
+    RESOURCE = "RESOURCE"
 
-
-class UserStatus(StrEnum):
-    ACTIVE = "ACTIVE"
-    INACTIVE = "INACTIVE"
-
-
-class EmployeeStatus(StrEnum):
+class ResourceStatusEnum(StrEnum):
     BENCH = "BENCH"
     ALLOCATED = "ALLOCATED"
 
-
-class SkillCategory(StrEnum):
+class SkillCategoryEnum(StrEnum):
     BACKEND = "BACKEND"
     FRONTEND = "FRONTEND"
     DEVOPS = "DEVOPS"
     QA = "QA"
     OTHER = "OTHER"
 
+class UserStatus(StrEnum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
 
 class ProficiencyLevel(StrEnum):
     BEGINNER = "BEGINNER"
@@ -58,3 +53,51 @@ class HealthStatus(StrEnum):
 class LlmProvider(StrEnum):
     GEMINI = "GEMINI"
     GROQ = "GROQ"
+
+
+class NotificationType(StrEnum):
+    ALLOCATION_CONFIRMATION = "ALLOCATION_CONFIRMATION"
+    TIMESHEET_REMINDER_1 = "TIMESHEET_REMINDER_1"
+    TIMESHEET_REMINDER_2 = "TIMESHEET_REMINDER_2"
+    TIMESHEET_FROZEN_EMPLOYEE = "TIMESHEET_FROZEN_EMPLOYEE"
+    TIMESHEET_FROZEN_MANAGER = "TIMESHEET_FROZEN_MANAGER"
+    PROJECT_AT_RISK = "PROJECT_AT_RISK"
+
+
+class NotificationDeliveryStatus(StrEnum):
+    SENT = "SENT"
+    FAILED = "FAILED"
+    SKIPPED_DUPLICATE = "SKIPPED_DUPLICATE"
+
+
+class TimesheetComplianceStatus(StrEnum):
+    PENDING = "PENDING"
+    REMINDER_1_SENT = "REMINDER_1_SENT"
+    REMINDER_2_SENT = "REMINDER_2_SENT"
+    FROZEN = "FROZEN"
+    RESTORED = "RESTORED"
+    SUBMITTED = "SUBMITTED"
+
+
+class NotificationType(StrEnum):
+    ALLOCATION_CONFIRMATION = "ALLOCATION_CONFIRMATION"
+    TIMESHEET_REMINDER_1 = "TIMESHEET_REMINDER_1"
+    TIMESHEET_REMINDER_2 = "TIMESHEET_REMINDER_2"
+    TIMESHEET_FROZEN_EMPLOYEE = "TIMESHEET_FROZEN_EMPLOYEE"
+    TIMESHEET_FROZEN_MANAGER = "TIMESHEET_FROZEN_MANAGER"
+    PROJECT_AT_RISK = "PROJECT_AT_RISK"
+
+
+class NotificationDeliveryStatus(StrEnum):
+    SENT = "SENT"
+    FAILED = "FAILED"
+    SKIPPED_DUPLICATE = "SKIPPED_DUPLICATE"
+
+
+class TimesheetComplianceStatus(StrEnum):
+    PENDING = "PENDING"
+    REMINDER_1_SENT = "REMINDER_1_SENT"
+    REMINDER_2_SENT = "REMINDER_2_SENT"
+    FROZEN = "FROZEN"
+    RESTORED = "RESTORED"
+    SUBMITTED = "SUBMITTED"

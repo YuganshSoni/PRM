@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from server.core.dependencies import dependency_provider
+from server.core.user_role import user_role_enum
 from server.models.enums import UserRole
 from server.models.user import User
 from server.schemas.requests.user import CreateUserRequest, ResetPasswordRequest
@@ -75,7 +76,7 @@ class UserRouter:
         return UserCreatedResponse(
             id=user.id,
             username=user.username,
-            role=UserRole(user.role),
+            role=user_role_enum(user),
             message=UserMessage.ACCOUNT_CREATED,
         )
 
@@ -164,7 +165,7 @@ class UserRouter:
             id=user.id,
             username=user.username,
             full_name=user.full_name,
-            role=UserRole(user.role),
+            role=user_role_enum(user),
             status=user.status,
         )
 
@@ -174,7 +175,7 @@ class UserRouter:
             username=user.username,
             email=user.email,
             full_name=user.full_name,
-            role=UserRole(user.role),
+            role=user_role_enum(user),
             status=user.status,
             force_password_change=user.force_password_change,
         )

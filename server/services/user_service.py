@@ -7,10 +7,12 @@ from server.core.exceptions import (
     UserAlreadyActiveError,
     UserAlreadyInactiveError,
     UserNotFoundError,
+    ValidationError,
 )
 from server.core.security import PasswordHasher
 from server.models.enums import UserRole, UserStatus
 from server.models.user import User
+from server.repositories.role_repository import RoleRepository
 from server.repositories.user_repository import UserRepository
 from server.schemas.requests.user import CreateUserRequest
 from server.services.auth_service import AuthService
@@ -28,10 +30,12 @@ class UserService:
     def __init__(
         self,
         user_repository: UserRepository,
+        role_repository: RoleRepository,
         password_hasher: PasswordHasher,
         auth_service: AuthService,
     ) -> None:
         self._user_repository = user_repository
+        self._role_repository = role_repository
         self._password_hasher = password_hasher
         self._auth_service = auth_service
 
@@ -43,12 +47,16 @@ class UserService:
         if await self._user_repository.find_by_email(str(dto.email)):
             raise DuplicateEmailError("Email already exists")
 
+        role = await self._role_repository.find_by_name(dto.role.value)
+        if role is None:
+            raise ValidationError(f"Unknown role: {dto.role.value}")
+
         user = User(
             username=dto.username,
             email=str(dto.email),
             full_name=dto.full_name,
             password_hash=self._password_hasher.hash(dto.temporary_password),
-            role=dto.role,
+            role_id=role.id,
             status=UserStatus.ACTIVE,
             force_password_change=True,
         )

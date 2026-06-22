@@ -3,19 +3,19 @@ from client.screens.base_screen import BaseScreen
 from client.screens.screen_result import ScreenResult
 
 
-class DeactivateEmployeeScreen(BaseScreen):
+class DeactivateResourceScreen(BaseScreen):
     async def run(self) -> ScreenResult:
         self._renderer.render_box_title("DEACTIVATE EMPLOYEE")
         print()
 
-        employee_id_str = self._reader.read_line("Enter Employee ID: ")
+        employee_id_str = self._reader.read_line("Enter Resource ID: ")
         if not employee_id_str.isdigit():
-            self._renderer.render_error("Employee ID must be a number.")
+            self._renderer.render_error("Resource ID must be a number.")
             return ScreenResult.RETRY
 
         employee_id = int(employee_id_str)
         try:
-            employee = await self._client.get_employee(employee_id)
+            resource = await self._client.get_employee(employee_id)
         except NetworkError as exc:
             self._renderer.render_error(exc.message)
             return ScreenResult.RETRY
@@ -24,16 +24,16 @@ class DeactivateEmployeeScreen(BaseScreen):
             return ScreenResult.RETRY
 
         print()
-        print(f"── {employee.full_name} ─────────────────────────────────")
-        print(f"Department : {employee.department}")
-        print(f"Status     : {employee.status}")
+        print(f"── {resource.full_name} ─────────────────────────────────")
+        print(f"Department : {resource.department}")
+        print(f"Status     : {resource.status}")
         print()
 
-        if employee.active_allocations:
-            count = len(employee.active_allocations)
-            print(f"⚠  Warning: This employee has {count} active allocation(s).")
+        if resource.active_allocations:
+            count = len(resource.active_allocations)
+            print(f"⚠  Warning: This resource has {count} active allocation(s).")
             print("   Ending their employment will remove them from:")
-            for allocation in employee.active_allocations:
+            for allocation in resource.active_allocations:
                 end = allocation.to_date.strftime("%d-%b-%y")
                 print(
                     f"     - {allocation.project_name}  "
@@ -41,7 +41,7 @@ class DeactivateEmployeeScreen(BaseScreen):
                 )
             print()
 
-        print(f"Are you sure you want to deactivate {employee.full_name}?")
+        print(f"Are you sure you want to deactivate {resource.full_name}?")
         print("This will: set is_active = false, end all active allocations today,")
         print("and block their login account.")
         print()
@@ -64,5 +64,5 @@ class DeactivateEmployeeScreen(BaseScreen):
             self._renderer.render_error(exc.message)
             return ScreenResult.RETRY
 
-        self._renderer.render_message("Employee deactivated. ✓")
+        self._renderer.render_message("Resource deactivated. ✓")
         return ScreenResult.BACK

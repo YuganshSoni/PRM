@@ -23,13 +23,22 @@ class BootstrapAdminSeeder(BaseSeeder):
         if result.scalar_one_or_none() is not None:
             return
 
+        from server.models.role import Role
+        role_result = await session.execute(
+            select(Role).where(Role.name == UserRole.ADMIN.value)
+        )
+        admin_role = role_result.scalar_one_or_none()
+        
+        if not admin_role:
+            raise RuntimeError("ADMIN role not found. Ensure LookupDataSeeder runs before BootstrapAdminSeeder.")
+
         session.add(
             User(
                 username=self.ADMIN_USERNAME,
                 email=self.ADMIN_EMAIL,
                 full_name=self.ADMIN_FULL_NAME,
                 password_hash=self._password_hasher.hash(self.ADMIN_DEFAULT_PASSWORD),
-                role=UserRole.ADMIN,
+                role_id=admin_role.id,
                 status=UserStatus.ACTIVE,
                 force_password_change=True,
             )

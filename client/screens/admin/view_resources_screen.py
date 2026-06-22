@@ -1,10 +1,10 @@
 from client.exceptions import ApiRequestError, NetworkError
 from client.screens.base_screen import BaseScreen
 from client.screens.screen_result import ScreenResult
-from server.models.enums import EmployeeStatus
+from server.models.enums import ResourceStatusEnum
 
 
-class ViewEmployeesScreen(BaseScreen):
+class ViewResourcesScreen(BaseScreen):
     async def run(self) -> ScreenResult:
         return await self._render_list()
 
@@ -31,10 +31,10 @@ class ViewEmployeesScreen(BaseScreen):
 
         print(f"{'ID':<6}{'Name':<20}{'Department':<14}{'Status'}")
         print("─" * 50)
-        for employee in employee_list.items:
+        for resource in employee_list.items:
             print(
-                f"{employee.id:<6}{employee.full_name:<20}"
-                f"{employee.department:<14}{employee.status}"
+                f"{resource.id:<6}{resource.full_name:<20}"
+                f"{resource.department:<14}{resource.status}"
             )
         print("─" * 50)
         print(
@@ -61,7 +61,7 @@ class ViewEmployeesScreen(BaseScreen):
 
         status: str | None = None
         if status_input:
-            if status_input not in (EmployeeStatus.BENCH, EmployeeStatus.ALLOCATED):
+            if status_input not in (ResourceStatusEnum.BENCH, ResourceStatusEnum.ALLOCATED):
                 self._renderer.render_error("Status must be BENCH or ALLOCATED.")
                 return ScreenResult.RETRY
             status = status_input

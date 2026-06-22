@@ -1,38 +1,49 @@
 from datetime import datetime
 
 from client.exceptions import ApiRequestError, NetworkError
-from client.screens.admin.allocation_view_screen import AllocationViewScreen
-from client.screens.admin.resource_management_screen import ResourceManagementScreen
-from client.screens.admin.project_management_screen import ProjectManagementScreen
-from client.screens.admin.system_config_screen import SystemConfigScreen
-from client.screens.admin.user_management_screen import UserManagementScreen
 from client.screens.base_screen import BaseScreen
+from client.screens.resource.my_allocations_screen import MyAllocationsScreen
+from client.screens.resource.my_timesheets_screen import MyTimesheetsScreen
+from client.screens.resource.submit_timesheet_screen import SubmitTimesheetScreen
 from client.screens.screen_result import ScreenResult
+from client.utils.date_parser import DateInputParser
 
 
-class AdminMenu(BaseScreen):
+class ResourceMenu(BaseScreen):
     async def run(self) -> ScreenResult:
         while True:
             session = self._session_manager.current
-            full_name = session.full_name if session else "Admin"
-            now = datetime.now().strftime("%d-%m-%Y  %H:%M")
+            full_name = session.full_name if session else "Resource"
+            now = datetime.now().strftime("%d-%m-%Y")
 
             self._renderer.render_banner(
-                "ADMIN PANEL",
-                f"Welcome, {full_name}  |  {now}",
+                "EMPLOYEE PANEL",
+                f"Welcome, {full_name}!  |  {now}",
             )
-            print("1. Manage Resources")
-            print("2. Manage Projects")
-            print("3. View All Allocations")
-            print("4. Manage Users")
-            print("5. System Configuration")
-            print("6. Logout")
+
+            await self._render_missed_reminder()
+
+            print("1. Submit Timesheet")
+            print("2. View My Timesheets")
+            print("3. View My Allocations")
+            print("4. Logout")
             print()
 
             option = self._reader.read_option("Enter option: ").strip()
             result = await self._handle_option(option)
             if result != ScreenResult.RETRY:
                 return result
+
+    async def _render_missed_reminder(self) -> None:
+        try:
+            reminder = await self._client.get_missed_reminder()
+        except (NetworkError, ApiRequestError):
+            return
+
+        if reminder.show_reminder and reminder.week_start is not None:
+            week_label = DateInputParser.format(reminder.week_start)
+            print(f"  ⚠  Reminder: Timesheet for week {week_label} has not been submitted.")
+            print()
 
     async def _handle_option(self, option: str) -> ScreenResult:
         screen_args = (
@@ -45,34 +56,24 @@ class AdminMenu(BaseScreen):
 
         match option:
             case "1":
-                em_result = await ResourceManagementScreen(*screen_args).run()
-                if em_result == ScreenResult.BACK:
+                submit_result = await SubmitTimesheetScreen(*screen_args).run()
+                if submit_result == ScreenResult.BACK:
                     return ScreenResult.RETRY
-                return em_result
+                return submit_result
             case "2":
-                pm_result = await ProjectManagementScreen(*screen_args).run()
-                if pm_result == ScreenResult.BACK:
+                history_result = await MyTimesheetsScreen(*screen_args).run()
+                if history_result == ScreenResult.BACK:
                     return ScreenResult.RETRY
-                return pm_result
+                return history_result
             case "3":
-                av_result = await AllocationViewScreen(*screen_args).run()
-                if av_result == ScreenResult.BACK:
+                alloc_result = await MyAllocationsScreen(*screen_args).run()
+                if alloc_result == ScreenResult.BACK:
                     return ScreenResult.RETRY
-                return av_result
+                return alloc_result
             case "4":
-                um_result = await UserManagementScreen(*screen_args).run()
-                if um_result == ScreenResult.BACK:
-                    return ScreenResult.RETRY
-                return um_result
-            case "5":
-                sc_result = await SystemConfigScreen(*screen_args).run()
-                if sc_result == ScreenResult.BACK:
-                    return ScreenResult.RETRY
-                return sc_result
-            case "6":
                 return await self._logout()
             case _:
-                self._renderer.render_error("Invalid option. Please enter 1–6.")
+                self._renderer.render_error("Invalid option. Please enter 1–4.")
                 return ScreenResult.RETRY
 
     async def _logout(self) -> ScreenResult:

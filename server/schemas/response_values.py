@@ -34,10 +34,10 @@ class UserMessage(StrEnum):
 
 
 class EmployeeMessage(StrEnum):
-    PROFILE_CREATED = "Employee profile created (BENCH)."
-    PROFILE_UPDATED = "Employee profile updated."
+    PROFILE_CREATED = "Resource profile created (BENCH)."
+    PROFILE_UPDATED = "Resource profile updated."
     MANAGER_ASSIGNED = "Manager assigned successfully."
-    EMPLOYEE_DEACTIVATED = "Employee deactivated."
+    EMPLOYEE_DEACTIVATED = "Resource deactivated."
 
 
 class SkillMessage(StrEnum):

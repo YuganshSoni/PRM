@@ -8,7 +8,7 @@ class AssignManagerScreen(BaseScreen):
         self._renderer.render_box_title("ASSIGN MANAGER")
         print()
 
-        employee_user_id = self._reader.read_line("Employee User ID : ")
+        employee_user_id = self._reader.read_line("Resource User ID : ")
         manager_user_id = self._reader.read_line("Manager User ID  : ")
         print()
         self._renderer.render_divider()

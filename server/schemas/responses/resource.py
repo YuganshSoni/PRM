@@ -2,7 +2,8 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
-from server.models.enums import EmployeeStatus
+from server.models.enums import ResourceStatusEnum
+from server.schemas.response_values import EmployeeMessage
 
 
 class ActiveAllocationPreview(BaseModel):
@@ -17,7 +18,7 @@ class EmployeeSummaryResponse(BaseModel):
     id: int
     full_name: str
     department: str
-    status: EmployeeStatus
+    status: ResourceStatusEnum
     is_active: bool
 
 
@@ -30,7 +31,7 @@ class EmployeeDetailResponse(BaseModel):
     email: str
     department: str
     designation: str
-    status: EmployeeStatus
+    status: ResourceStatusEnum
     is_active: bool
     manager_id: int | None
     active_allocations: list[ActiveAllocationPreview]
@@ -52,17 +53,17 @@ class EmployeeUpsertResponse(BaseModel):
 
     id: int
     user_id: int
-    status: EmployeeStatus
-    message: str
+    status: ResourceStatusEnum
+    message: EmployeeMessage
     created: bool
 
 
 class AssignManagerResponse(BaseModel):
-    employee_id: int
+    resource_id: int
     manager_id: int
-    message: str
+    message: EmployeeMessage
 
 
 class EmployeeActionResponse(BaseModel):
-    employee_id: int
-    message: str
+    resource_id: int
+    message: EmployeeMessage

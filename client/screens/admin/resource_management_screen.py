@@ -1,20 +1,20 @@
 from client.screens.admin.assign_manager_screen import AssignManagerScreen
-from client.screens.admin.deactivate_employee_screen import DeactivateEmployeeScreen
+from client.screens.admin.deactivate_resource_screen import DeactivateResourceScreen
 from client.screens.admin.manage_skills_screen import ManageSkillsScreen
-from client.screens.admin.update_employee_screen import UpdateEmployeeScreen
-from client.screens.admin.view_employees_screen import ViewEmployeesScreen
+from client.screens.admin.update_resource_screen import UpdateResourceScreen
+from client.screens.admin.view_resources_screen import ViewResourcesScreen
 from client.screens.base_screen import BaseScreen
 from client.screens.screen_result import ScreenResult
 
 
-class EmployeeManagementScreen(BaseScreen):
+class ResourceManagementScreen(BaseScreen):
     async def run(self) -> ScreenResult:
         while True:
             self._renderer.render_box_title("MANAGE EMPLOYEES")
-            print("1. View All Employees")
-            print("2. Update Employee")
-            print("3. Deactivate Employee")
-            print("4. Manage Employee Skills")
+            print("1. View All Resources")
+            print("2. Update Resource")
+            print("3. Deactivate Resource")
+            print("4. Manage Resource Skills")
             print("5. Assign Manager")
             print("6. Back")
             print()
@@ -40,11 +40,11 @@ class EmployeeManagementScreen(BaseScreen):
         )
         match option:
             case "1":
-                return await ViewEmployeesScreen(*screen_args).run()
+                return await ViewResourcesScreen(*screen_args).run()
             case "2":
-                return await UpdateEmployeeScreen(*screen_args).run()
+                return await UpdateResourceScreen(*screen_args).run()
             case "3":
-                return await DeactivateEmployeeScreen(*screen_args).run()
+                return await DeactivateResourceScreen(*screen_args).run()
             case "4":
                 return await ManageSkillsScreen(*screen_args).run()
             case "5":

@@ -30,7 +30,7 @@ class BaseMenuScreen(BaseScreen):
             return await self._logout()
 
         self._renderer.render_error(
-            "Invalid option. Features coming in Phase 4+. Enter L to logout."
+            "Invalid option. Enter a valid menu choice or L to logout."
         )
         return ScreenResult.RETRY
 

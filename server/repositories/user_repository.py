@@ -1,5 +1,6 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from server.models.enums import UserStatus
 from server.models.user import User
@@ -12,7 +13,9 @@ class UserRepository(BaseRepository[User]):
 
     async def find_by_username(self, username: str) -> User | None:
         result = await self._session.execute(
-            select(User).where(User.username == username)
+            select(User)
+            .where(User.username == username)
+            .options(selectinload(User.role))
         )
         return result.scalar_one_or_none()
 
@@ -21,19 +24,30 @@ class UserRepository(BaseRepository[User]):
         return user is not None
 
     async def find_by_id(self, user_id: int) -> User | None:
-        return await self.get_by_id(user_id)
+        result = await self._session.execute(
+            select(User)
+            .where(User.id == user_id)
+            .options(selectinload(User.role))
+        )
+        return result.scalar_one_or_none()
 
     async def find_by_email(self, email: str) -> User | None:
         result = await self._session.execute(
-            select(User).where(User.email == email)
+            select(User)
+            .where(User.email == email)
+            .options(selectinload(User.role))
         )
         return result.scalar_one_or_none()
 
     async def list_users(self, limit: int, offset: int) -> list[User]:
         result = await self._session.execute(
-            select(User).order_by(User.id).limit(limit).offset(offset)
+            select(User)
+            .options(selectinload(User.role))
+            .order_by(User.id)
+            .limit(limit)
+            .offset(offset)
         )
-        return list(result.scalars().all())
+        return list(result.scalars().unique().all())
 
     async def count_all(self) -> int:
         result = await self._session.execute(select(func.count()).select_from(User))
@@ -50,5 +64,7 @@ class UserRepository(BaseRepository[User]):
     async def save(self, user: User) -> User:
         self._session.add(user)
         await self._session.flush()
-        await self._session.refresh(user)
-        return user
+        if user.id is None:
+            await self._session.refresh(user)
+        reloaded = await self.find_by_id(user.id)
+        return reloaded if reloaded is not None else user

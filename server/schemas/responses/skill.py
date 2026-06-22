@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
-from server.models.enums import ProficiencyLevel, SkillCategory
+from server.models.enums import ProficiencyLevel, SkillCategoryEnum
 from server.schemas.response_values import SkillMessage
 
 
@@ -9,7 +9,7 @@ class SkillResponse(BaseModel):
 
     id: int
     skill_name: str
-    category: SkillCategory
+    category: SkillCategoryEnum
     proficiency_level: ProficiencyLevel
 
 

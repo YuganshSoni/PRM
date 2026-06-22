@@ -8,9 +8,13 @@ from server.seed.bootstrap_admin_seeder import BootstrapAdminSeeder
 from server.seed.system_config_seeder import SystemConfigSeeder
 
 
+from server.seed.lookup_data_seeder import LookupDataSeeder
+
+
 class SeedRunner:
     def __init__(self) -> None:
         self._seeders = [
+            LookupDataSeeder(),
             BootstrapAdminSeeder(PasswordHasher()),
             SystemConfigSeeder(),
             ActivityTagSeeder(),

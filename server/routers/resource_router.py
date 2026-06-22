@@ -5,13 +5,13 @@ from fastapi.responses import JSONResponse
 
 from server.core.dependencies import dependency_provider
 from server.models.allocation import Allocation
-from server.models.employee import Employee
-from server.models.enums import EmployeeStatus, UserRole
+from server.models.resource import Resource
+from server.models.enums import ResourceStatusEnum, UserRole
 from server.models.user import User
-from server.schemas.requests.employee import AssignManagerRequest, UpdateEmployeeRequest
+from server.schemas.requests.resource import AssignManagerRequest, UpdateEmployeeRequest
 from server.schemas.requests.skill import AddSkillRequest
 from server.schemas.response_values import EmployeeMessage
-from server.schemas.responses.employee import (
+from server.schemas.responses.resource import (
     ActiveAllocationPreview,
     AssignManagerResponse,
     EmployeeActionResponse,
@@ -21,22 +21,23 @@ from server.schemas.responses.employee import (
     EmployeeUpsertResponse,
 )
 from server.schemas.responses.skill import SkillListResponse, SkillResponse
-from server.services.employee_service import EmployeeService
+from server.services.resource_mapper import ResourceMapper
+from server.services.resource_service import EmployeeService
 from server.services.skill_service import SkillService
 
 
 class EmployeeRouter:
     def __init__(self) -> None:
-        self.router = APIRouter(prefix="/employees", tags=["employees"])
+        self.router = APIRouter(prefix="/resources", tags=["resources"])
         self.router.add_api_route(
             "/by-user/{user_id}",
-            self.update_employee,
+            self.update_resource,
             methods=["PUT"],
             response_model=EmployeeUpsertResponse,
         )
         self.router.add_api_route(
             "",
-            self.list_employees,
+            self.list_resources,
             methods=["GET"],
             response_model=EmployeeListResponse,
         )
@@ -47,44 +48,44 @@ class EmployeeRouter:
             response_model=AssignManagerResponse,
         )
         self.router.add_api_route(
-            "/{employee_id}",
-            self.get_employee,
+            "/{resource_id}",
+            self.get_resource,
             methods=["GET"],
             response_model=EmployeeDetailResponse,
         )
         self.router.add_api_route(
-            "/{employee_id}/deactivate",
-            self.deactivate_employee,
+            "/{resource_id}/deactivate",
+            self.deactivate_resource,
             methods=["POST"],
             response_model=EmployeeActionResponse,
         )
         self.router.add_api_route(
-            "/{employee_id}/skills",
+            "/{resource_id}/skills",
             self.list_skills,
             methods=["GET"],
             response_model=SkillListResponse,
         )
         self.router.add_api_route(
-            "/{employee_id}/skills",
+            "/{resource_id}/skills",
             self.add_skill,
             methods=["POST"],
             response_model=SkillResponse,
             status_code=status.HTTP_201_CREATED,
         )
 
-    async def update_employee(
+    async def update_resource(
         self,
         user_id: int,
         body: UpdateEmployeeRequest,
         _admin: Annotated[User, Depends(dependency_provider.require_role(UserRole.ADMIN))],
         __: Annotated[User, Depends(dependency_provider.require_password_changed)],
-        employee_service: EmployeeService = Depends(dependency_provider.get_employee_service),
+        resource_service: EmployeeService = Depends(dependency_provider.get_resource_service),
     ) -> EmployeeUpsertResponse | JSONResponse:
-        result = await employee_service.update_employee(user_id, body)
+        result = await resource_service.update_resource(user_id, body)
         response = EmployeeUpsertResponse(
-            id=result.employee.id,
-            user_id=result.employee.user_id,
-            status=EmployeeStatus(result.employee.status),
+            id=result.resource.id,
+            user_id=result.resource.user_id,
+            status=ResourceMapper.status(result.resource),
             message=(
                 EmployeeMessage.PROFILE_CREATED
                 if result.created
@@ -99,24 +100,24 @@ class EmployeeRouter:
             )
         return response
 
-    async def list_employees(
+    async def list_resources(
         self,
         _admin: Annotated[User, Depends(dependency_provider.require_role(UserRole.ADMIN))],
         __: Annotated[User, Depends(dependency_provider.require_password_changed)],
-        employee_service: EmployeeService = Depends(dependency_provider.get_employee_service),
-        status_filter: EmployeeStatus | None = Query(default=None, alias="status"),
+        resource_service: EmployeeService = Depends(dependency_provider.get_resource_service),
+        status_filter: ResourceStatusEnum | None = Query(default=None, alias="status"),
         department: str | None = Query(default=None),
         limit: int = Query(default=50, ge=1, le=100),
         offset: int = Query(default=0, ge=0),
     ) -> EmployeeListResponse:
-        result = await employee_service.list_employees(
+        result = await resource_service.list_resources(
             status=status_filter,
             department=department,
             limit=limit,
             offset=offset,
         )
         return EmployeeListResponse(
-            items=[self._to_summary(employee) for employee in result.items],
+            items=[self._to_summary(resource) for resource in result.items],
             total=result.total,
             bench_count=result.bench_count,
             allocated_count=result.allocated_count,
@@ -129,82 +130,82 @@ class EmployeeRouter:
         body: AssignManagerRequest,
         _admin: Annotated[User, Depends(dependency_provider.require_role(UserRole.ADMIN))],
         __: Annotated[User, Depends(dependency_provider.require_password_changed)],
-        employee_service: EmployeeService = Depends(dependency_provider.get_employee_service),
+        resource_service: EmployeeService = Depends(dependency_provider.get_resource_service),
     ) -> AssignManagerResponse:
-        employee = await employee_service.assign_manager(body)
+        resource = await resource_service.assign_manager(body)
         return AssignManagerResponse(
-            employee_id=employee.id,
-            manager_id=employee.manager_id or 0,
+            resource_id=resource.id,
+            manager_id=resource.manager_id or 0,
             message=EmployeeMessage.MANAGER_ASSIGNED,
         )
 
-    async def get_employee(
+    async def get_resource(
         self,
-        employee_id: int,
+        resource_id: int,
         _admin: Annotated[User, Depends(dependency_provider.require_role(UserRole.ADMIN))],
         __: Annotated[User, Depends(dependency_provider.require_password_changed)],
-        employee_service: EmployeeService = Depends(dependency_provider.get_employee_service),
+        resource_service: EmployeeService = Depends(dependency_provider.get_resource_service),
     ) -> EmployeeDetailResponse:
-        employee = await employee_service.get_employee(employee_id)
-        allocations = await employee_service.get_active_allocations(employee_id)
-        return self._to_detail(employee, allocations)
+        resource = await resource_service.get_resource(resource_id)
+        allocations = await resource_service.get_active_allocations(resource_id)
+        return self._to_detail(resource, allocations)
 
-    async def deactivate_employee(
+    async def deactivate_resource(
         self,
-        employee_id: int,
+        resource_id: int,
         _admin: Annotated[User, Depends(dependency_provider.require_role(UserRole.ADMIN))],
         __: Annotated[User, Depends(dependency_provider.require_password_changed)],
-        employee_service: EmployeeService = Depends(dependency_provider.get_employee_service),
+        resource_service: EmployeeService = Depends(dependency_provider.get_resource_service),
     ) -> EmployeeActionResponse:
-        await employee_service.deactivate_employee(employee_id)
+        await resource_service.deactivate_resource(resource_id)
         return EmployeeActionResponse(
-            employee_id=employee_id,
+            resource_id=resource_id,
             message=EmployeeMessage.EMPLOYEE_DEACTIVATED,
         )
 
     async def list_skills(
         self,
-        employee_id: int,
+        resource_id: int,
         _admin: Annotated[User, Depends(dependency_provider.require_role(UserRole.ADMIN))],
         __: Annotated[User, Depends(dependency_provider.require_password_changed)],
         skill_service: SkillService = Depends(dependency_provider.get_skill_service),
     ) -> SkillListResponse:
-        skills = await skill_service.list_skills(employee_id)
+        skills = await skill_service.list_skills(resource_id)
         return SkillListResponse(items=[self._to_skill(skill) for skill in skills])
 
     async def add_skill(
         self,
-        employee_id: int,
+        resource_id: int,
         body: AddSkillRequest,
         _admin: Annotated[User, Depends(dependency_provider.require_role(UserRole.ADMIN))],
         __: Annotated[User, Depends(dependency_provider.require_password_changed)],
         skill_service: SkillService = Depends(dependency_provider.get_skill_service),
     ) -> SkillResponse:
-        skill = await skill_service.add_skill(employee_id, body)
+        skill = await skill_service.add_skill(resource_id, body)
         return self._to_skill(skill)
 
-    def _to_summary(self, employee: Employee) -> EmployeeSummaryResponse:
+    def _to_summary(self, resource: Resource) -> EmployeeSummaryResponse:
         return EmployeeSummaryResponse(
-            id=employee.id,
-            full_name=employee.full_name,
-            department=employee.department,
-            status=EmployeeStatus(employee.status),
-            is_active=employee.is_active,
+            id=resource.id,
+            full_name=ResourceMapper.full_name(resource),
+            department=ResourceMapper.department_name(resource),
+            status=ResourceMapper.status(resource),
+            is_active=resource.is_active,
         )
 
     def _to_detail(
-        self, employee: Employee, allocations: list[Allocation]
+        self, resource: Resource, allocations: list[Allocation]
     ) -> EmployeeDetailResponse:
         return EmployeeDetailResponse(
-            id=employee.id,
-            user_id=employee.user_id,
-            full_name=employee.full_name,
-            email=employee.email,
-            department=employee.department,
-            designation=employee.designation,
-            status=EmployeeStatus(employee.status),
-            is_active=employee.is_active,
-            manager_id=employee.manager_id,
+            id=resource.id,
+            user_id=resource.user_id,
+            full_name=ResourceMapper.full_name(resource),
+            email=ResourceMapper.email(resource),
+            department=ResourceMapper.department_name(resource),
+            designation=ResourceMapper.designation_name(resource),
+            status=ResourceMapper.status(resource),
+            is_active=resource.is_active,
+            manager_id=resource.manager_id,
             active_allocations=[
                 ActiveAllocationPreview(
                     project_name=allocation.project.name,
@@ -218,7 +219,7 @@ class EmployeeRouter:
     def _to_skill(self, skill) -> SkillResponse:
         return SkillResponse(
             id=skill.id,
-            skill_name=skill.skill_name,
-            category=skill.category,
+            skill_name=ResourceMapper.skill_name(skill),
+            category=ResourceMapper.skill_category(skill),
             proficiency_level=skill.proficiency_level,
         )

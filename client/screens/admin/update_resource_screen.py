@@ -3,7 +3,7 @@ from client.screens.base_screen import BaseScreen
 from client.screens.screen_result import ScreenResult
 
 
-class UpdateEmployeeScreen(BaseScreen):
+class UpdateResourceScreen(BaseScreen):
     async def run(self) -> ScreenResult:
         self._renderer.render_box_title("UPDATE EMPLOYEE")
         print()
@@ -49,7 +49,7 @@ class UpdateEmployeeScreen(BaseScreen):
             return ScreenResult.RETRY
 
         if result.created:
-            self._renderer.render_message("Employee profile created (BENCH). ✓")
+            self._renderer.render_message("Resource profile created (BENCH). ✓")
         else:
-            self._renderer.render_message("Employee profile updated. ✓")
+            self._renderer.render_message("Resource profile updated. ✓")
         return ScreenResult.BACK

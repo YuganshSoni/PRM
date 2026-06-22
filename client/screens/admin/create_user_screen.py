@@ -18,7 +18,7 @@ class CreateUserScreen(BaseScreen):
         email = self._reader.read_line("Email             : ")
         username = self._reader.read_line("Username          : ")
         temporary_password = self._reader.read_password("Temporary Password: ")
-        print("Role              : (1) Admin  (2) Manager  (3) Employee")
+        print("Role              : (1) Admin  (2) Manager  (3) Resource")
         role_option = self._reader.read_line("Select role [1-3]: ")
         print()
         self._renderer.render_divider()
@@ -74,6 +74,6 @@ class CreateUserScreen(BaseScreen):
             case "2":
                 return UserRole.MANAGER
             case "3":
-                return UserRole.EMPLOYEE
+                return UserRole.RESOURCE
             case _:
                 return None

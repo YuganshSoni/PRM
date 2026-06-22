@@ -9,5 +9,5 @@ class UpdateEmployeeRequest(BaseModel):
 
 
 class AssignManagerRequest(BaseModel):
-    employee_user_id: int = Field(..., ge=1)
+    resource_user_id: int = Field(..., ge=1)
     manager_user_id: int = Field(..., ge=1)

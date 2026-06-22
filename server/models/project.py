@@ -8,9 +8,9 @@ from server.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from server.models.allocation import Allocation
-    from server.models.employee import Employee
     from server.models.milestone import Milestone
     from server.models.project_health import ProjectHealth
+    from server.models.resource import Resource
     from server.models.timesheet_entry import TimesheetEntry
 
 
@@ -24,11 +24,11 @@ class Project(Base, TimestampMixin):
     end_date: Mapped[date] = mapped_column(Date, index=True)
     status: Mapped[str] = mapped_column(String(20), index=True)
     manager_id: Mapped[int] = mapped_column(
-        ForeignKey("employees.id", ondelete="RESTRICT"), index=True
+        ForeignKey("resources.id", ondelete="RESTRICT"), index=True
     )
     total_story_points: Mapped[int] = mapped_column(Integer, default=0)
 
-    manager: Mapped["Employee"] = relationship(back_populates="managed_projects")
+    manager: Mapped["Resource"] = relationship(back_populates="managed_projects")
     milestones: Mapped[list["Milestone"]] = relationship(back_populates="project")
     allocations: Mapped[list["Allocation"]] = relationship(back_populates="project")
     timesheet_entries: Mapped[list["TimesheetEntry"]] = relationship(

@@ -2,7 +2,7 @@ from client.exceptions import ApiRequestError, NetworkError
 from client.screens.base_screen import BaseScreen
 from client.screens.screen_result import ScreenResult
 from client.schemas.skill import SkillListResponse
-from server.models.enums import ProficiencyLevel, SkillCategory
+from server.models.enums import ProficiencyLevel, SkillCategoryEnum
 
 
 class ManageSkillsScreen(BaseScreen):
@@ -10,14 +10,14 @@ class ManageSkillsScreen(BaseScreen):
         self._renderer.render_box_title("MANAGE SKILLS")
         print()
 
-        employee_id_str = self._reader.read_line("Enter Employee ID: ")
+        employee_id_str = self._reader.read_line("Enter Resource ID: ")
         if not employee_id_str.isdigit():
-            self._renderer.render_error("Employee ID must be a number.")
+            self._renderer.render_error("Resource ID must be a number.")
             return ScreenResult.RETRY
 
         employee_id = int(employee_id_str)
         try:
-            employee = await self._client.get_employee(employee_id)
+            resource = await self._client.get_employee(employee_id)
             skills = await self._client.list_employee_skills(employee_id)
         except NetworkError as exc:
             self._renderer.render_error(exc.message)
@@ -28,7 +28,7 @@ class ManageSkillsScreen(BaseScreen):
 
         while True:
             print()
-            print(f"── {employee.full_name} ─────────────────────────────────")
+            print(f"── {resource.full_name} ─────────────────────────────────")
             print("Current Skills:")
             if not skills.items:
                 print("  (none)")
@@ -163,18 +163,18 @@ class ManageSkillsScreen(BaseScreen):
         self._renderer.render_message("Skill removed. ✓")
         return await self._client.list_employee_skills(employee_id)
 
-    def _parse_category(self, choice: str) -> SkillCategory | None:
+    def _parse_category(self, choice: str) -> SkillCategoryEnum | None:
         match choice.strip():
             case "1":
-                return SkillCategory.BACKEND
+                return SkillCategoryEnum.BACKEND
             case "2":
-                return SkillCategory.FRONTEND
+                return SkillCategoryEnum.FRONTEND
             case "3":
-                return SkillCategory.DEVOPS
+                return SkillCategoryEnum.DEVOPS
             case "4":
-                return SkillCategory.QA
+                return SkillCategoryEnum.QA
             case "5":
-                return SkillCategory.OTHER
+                return SkillCategoryEnum.OTHER
             case _:
                 return None
 
