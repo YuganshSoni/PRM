@@ -11,18 +11,28 @@ from client.schemas.auth import (
     LoginResponse,
     LogoutResponse,
 )
-from client.schemas.employee import (
+from client.schemas.resource import (
     AssignManagerResponse,
     EmployeeActionResponse,
     EmployeeDetailResponse,
     EmployeeListResponse,
     EmployeeUpsertResponse,
 )
+from client.schemas.activity_tag import ActivityTagListResponse
 from client.schemas.allocation import (
     AllocationCreatedResponse,
     AllocationEndedResponse,
     AllocationListResponse,
+    MyAllocationListResponse,
     ProjectAllocationListResponse,
+    WeekAllocationContextResponse,
+)
+from client.schemas.timesheet import (
+    MissedReminderResponse,
+    TeamTimesheetListResponse,
+    TimesheetDetailResponse,
+    TimesheetListResponse,
+    TimesheetSubmittedResponse,
 )
 from client.schemas.config import SystemConfigResponse, SystemConfigUpdatedResponse
 from client.schemas.dashboard import (
@@ -36,6 +46,7 @@ from client.schemas.milestone import (
 )
 from client.schemas.project import (
     ManagedProjectListResponse,
+    ManagerProjectDetailResponse,
     ProjectCreatedResponse,
     ProjectDetailResponse,
     ProjectListResponse,
@@ -48,6 +59,9 @@ from client.schemas.user import (
     UserListResponse,
     UserSummaryResponse,
 )
+from client.schemas.ai import RiskSummaryResponse, SkillMatchResponse
+from client.schemas.allocation import BulkAllocationCreatedResponse, BulkCreateAllocationRequest
+from client.schemas.team_build import TeamBuildResponse
 from client.session import Session, SessionManager
 from server.models.enums import UserRole
 
@@ -195,7 +209,7 @@ class HttpxClient:
     ) -> EmployeeUpsertResponse:
         response = await self._request(
             "PUT",
-            f"/employees/by-user/{user_id}",
+            f"/resources/by-user/{user_id}",
             json={
                 "full_name": full_name,
                 "email": email,
@@ -224,7 +238,7 @@ class HttpxClient:
             params["department"] = department
         response = await self._request(
             "GET",
-            "/employees",
+            "/resources",
             params=params,
             authenticated=True,
         )
@@ -233,7 +247,7 @@ class HttpxClient:
     async def get_employee(self, employee_id: int) -> EmployeeDetailResponse:
         response = await self._request(
             "GET",
-            f"/employees/{employee_id}",
+            f"/resources/{employee_id}",
             authenticated=True,
         )
         return EmployeeDetailResponse.model_validate(response.json())
@@ -241,7 +255,7 @@ class HttpxClient:
     async def deactivate_employee(self, employee_id: int) -> EmployeeActionResponse:
         response = await self._request(
             "POST",
-            f"/employees/{employee_id}/deactivate",
+            f"/resources/{employee_id}/deactivate",
             authenticated=True,
         )
         return EmployeeActionResponse.model_validate(response.json())
@@ -251,9 +265,9 @@ class HttpxClient:
     ) -> AssignManagerResponse:
         response = await self._request(
             "PUT",
-            "/employees/assign-manager",
+            "/resources/assign-manager",
             json={
-                "employee_user_id": employee_user_id,
+                "resource_user_id": employee_user_id,
                 "manager_user_id": manager_user_id,
             },
             authenticated=True,
@@ -263,7 +277,7 @@ class HttpxClient:
     async def list_employee_skills(self, employee_id: int) -> SkillListResponse:
         response = await self._request(
             "GET",
-            f"/employees/{employee_id}/skills",
+            f"/resources/{employee_id}/skills",
             authenticated=True,
         )
         return SkillListResponse.model_validate(response.json())
@@ -277,7 +291,7 @@ class HttpxClient:
     ) -> SkillResponse:
         response = await self._request(
             "POST",
-            f"/employees/{employee_id}/skills",
+            f"/resources/{employee_id}/skills",
             json={
                 "skill_name": skill_name,
                 "category": category,
@@ -493,7 +507,7 @@ class HttpxClient:
             "POST",
             "/allocations",
             json={
-                "employee_id": employee_id,
+                "resource_id": employee_id,
                 "project_id": project_id,
                 "utilisation_percent": utilisation_percent,
                 "from_date": from_date,
@@ -529,15 +543,139 @@ class HttpxClient:
         )
         return ManagedProjectListResponse.model_validate(response.json())
 
+    async def get_manager_project_detail(
+        self, project_id: int
+    ) -> ManagerProjectDetailResponse:
+        response = await self._request(
+            "GET",
+            f"/projects/mine/{project_id}",
+            authenticated=True,
+        )
+        return ManagerProjectDetailResponse.model_validate(response.json())
+
+    async def get_missed_reminder(self) -> MissedReminderResponse:
+        response = await self._request(
+            "GET",
+            "/timesheets/mine/missed-reminder",
+            authenticated=True,
+        )
+        return MissedReminderResponse.model_validate(response.json())
+
+    async def list_my_timesheets(self) -> TimesheetListResponse:
+        response = await self._request(
+            "GET",
+            "/timesheets/mine",
+            authenticated=True,
+        )
+        return TimesheetListResponse.model_validate(response.json())
+
+    async def list_team_timesheets(
+        self, *, week_start: str
+    ) -> TeamTimesheetListResponse:
+        response = await self._request(
+            "GET",
+            "/timesheets/team",
+            params={"week_start": week_start},
+            authenticated=True,
+        )
+        return TeamTimesheetListResponse.model_validate(response.json())
+
+    async def get_timesheet_detail(self, timesheet_id: int) -> TimesheetDetailResponse:
+        response = await self._request(
+            "GET",
+            f"/timesheets/{timesheet_id}",
+            authenticated=True,
+        )
+        return TimesheetDetailResponse.model_validate(response.json())
+
+    async def submit_timesheet(self, body: dict[str, object]) -> TimesheetSubmittedResponse:
+        response = await self._request(
+            "POST",
+            "/timesheets",
+            json=body,
+            authenticated=True,
+        )
+        return TimesheetSubmittedResponse.model_validate(response.json())
+
+    async def list_my_allocations(
+        self, *, week_start: str | None = None
+    ) -> MyAllocationListResponse | WeekAllocationContextResponse:
+        params = {"week_start": week_start} if week_start else None
+        response = await self._request(
+            "GET",
+            "/allocations/mine",
+            params=params,
+            authenticated=True,
+        )
+        payload = response.json()
+        if week_start is not None:
+            return WeekAllocationContextResponse.model_validate(payload)
+        return MyAllocationListResponse.model_validate(payload)
+
+    async def list_activity_tags(self) -> ActivityTagListResponse:
+        response = await self._request(
+            "GET",
+            "/activity-tags",
+            authenticated=True,
+        )
+        return ActivityTagListResponse.model_validate(response.json())
+
     async def get_employee_detail(
         self, employee_id: int
     ) -> DashboardEmployeeDetailResponse:
         response = await self._request(
             "GET",
-            f"/dashboard/employees/{employee_id}",
+            f"/dashboard/resources/{employee_id}",
             authenticated=True,
         )
         return DashboardEmployeeDetailResponse.model_validate(response.json())
+
+    async def skill_match(
+        self, *, requirement: str, project_id: int | None = None
+    ) -> SkillMatchResponse:
+        body: dict[str, object] = {"requirement": requirement}
+        if project_id is not None:
+            body["project_id"] = project_id
+        response = await self._request(
+            "POST",
+            "/ai/skill-match",
+            json=body,
+            authenticated=True,
+            timeout_seconds=self._settings.ai_request_timeout_seconds,
+        )
+        return SkillMatchResponse.model_validate(response.json())
+
+    async def risk_summary(self, project_id: int) -> RiskSummaryResponse:
+        response = await self._request(
+            "POST",
+            f"/ai/risk-summary/{project_id}",
+            authenticated=True,
+            timeout_seconds=self._settings.ai_request_timeout_seconds,
+        )
+        return RiskSummaryResponse.model_validate(response.json())
+
+    async def team_build(
+        self, *, requirement: str, project_id: int
+    ) -> TeamBuildResponse:
+        response = await self._request(
+            "POST",
+            "/ai/team-build",
+            json={"requirement": requirement, "project_id": project_id},
+            authenticated=True,
+            timeout_seconds=self._settings.ai_request_timeout_seconds,
+        )
+        return TeamBuildResponse.model_validate(response.json())
+
+    async def bulk_create_allocations(
+        self, payload: BulkCreateAllocationRequest
+    ) -> BulkAllocationCreatedResponse:
+        response = await self._request(
+            "POST",
+            "/allocations/bulk",
+            json=payload.model_dump(mode="json"),
+            authenticated=True,
+        )
+        return BulkAllocationCreatedResponse.model_validate(response.json())
 
     def _auth_headers(self) -> dict[str, str]:
         try:
@@ -554,12 +692,14 @@ class HttpxClient:
         json: dict[str, Any] | None = None,
         params: dict[str, str] | None = None,
         authenticated: bool = False,
+        timeout_seconds: float | None = None,
     ) -> httpx.Response:
         headers = self._auth_headers() if authenticated else {}
+        timeout = timeout_seconds or self._settings.request_timeout_seconds
         try:
             async with httpx.AsyncClient(
                 base_url=self._settings.api_base_url,
-                timeout=self._settings.request_timeout_seconds,
+                timeout=timeout,
             ) as client:
                 response = await client.request(
                     method, path, json=json, params=params, headers=headers
