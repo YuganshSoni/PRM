@@ -2,6 +2,7 @@ import asyncio
 
 from client.api.httpx_client import HttpxClient
 from client.config import get_client_settings
+from client.context.ai_context_store import AiContextStore
 from client.factories.screen_factory import ScreenFactory
 from client.navigation import NavigationStack
 from client.screens.change_password_screen import ChangePasswordScreen
@@ -20,6 +21,7 @@ class Application:
         self._navigation = NavigationStack()
         self._renderer = ConsoleRenderer()
         self._reader = ConsoleReader()
+        self._ai_context_store = AiContextStore()
         self._client = HttpxClient(self._settings, self._session_manager)
         self._screen_factory = ScreenFactory(
             self._client,
@@ -27,6 +29,7 @@ class Application:
             self._navigation,
             self._renderer,
             self._reader,
+            self._ai_context_store,
         )
 
     def _screen_args(self) -> tuple:

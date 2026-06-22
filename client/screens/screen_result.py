@@ -10,3 +10,4 @@ class ScreenResult(StrEnum):
     LOGOUT = "logout"
     RETRY = "retry"
     BACK = "back"
+    GO_ALLOCATE = "go_allocate"
