@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import lru_cache
 import logging
 
@@ -5,6 +6,19 @@ from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
+
+GMAIL_SMTP_HOST = "smtp.gmail.com"
+GMAIL_SMTP_PORT = 587
+
+
+@dataclass(frozen=True)
+class GmailSmtpSettings:
+    email_enabled: bool
+    smtp_host: str
+    smtp_port: int
+    smtp_username: str
+    smtp_password: str
+    smtp_from_email: str
 
 
 class Settings(BaseSettings):
@@ -24,6 +38,9 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     gemini_model: str = ""
     groq_model: str = ""
+    email_enabled: bool = False
+    gmail_address: str = ""
+    gmail_app_password: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -35,6 +52,20 @@ class Settings(BaseSettings):
                 self.jwt_secret_min_length,
             )
         return self
+
+    def resolve_gmail_smtp(self) -> GmailSmtpSettings | None:
+        address = self.gmail_address.strip()
+        app_password = self.gmail_app_password.strip()
+        if not address or not app_password:
+            return None
+        return GmailSmtpSettings(
+            email_enabled=self.email_enabled,
+            smtp_host=GMAIL_SMTP_HOST,
+            smtp_port=GMAIL_SMTP_PORT,
+            smtp_username=address,
+            smtp_password=app_password,
+            smtp_from_email=address,
+        )
 
     @property
     def cors_origin_list(self) -> list[str]:

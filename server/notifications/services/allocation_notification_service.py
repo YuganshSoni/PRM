@@ -1,3 +1,5 @@
+import logging
+
 from server.models.allocation import Allocation
 from server.models.enums import NotificationType
 from server.notifications.dto.notification_dto import (
@@ -8,6 +10,8 @@ from server.notifications.services.notification_service import NotificationServi
 from server.notifications.templates.email_templates import EmailTemplateRenderer
 from server.services.resource_mapper import ResourceMapper
 
+logger = logging.getLogger(__name__)
+
 
 class AllocationNotificationService:
     def __init__(self, notification_service: NotificationService) -> None:
@@ -17,8 +21,24 @@ class AllocationNotificationService:
         resource = allocation.resource
         project = allocation.project
         if resource is None or project is None or resource.user is None:
+            logger.warning(
+                "Allocation confirmation skipped: allocation_id=%s "
+                "(resource=%s project=%s user=%s)",
+                allocation.id,
+                resource is not None,
+                project is not None,
+                resource is not None and resource.user is not None,
+            )
             return
 
+        logger.info(
+            "Allocation confirmation triggered: allocation_id=%s resource_id=%s "
+            "project=%r to=%s",
+            allocation.id,
+            resource.id,
+            project.name,
+            resource.user.email,
+        )
         subject, body = EmailTemplateRenderer.allocation_confirmation(
             AllocationConfirmationContext(
                 resource_name=ResourceMapper.full_name(resource),
@@ -28,7 +48,7 @@ class AllocationNotificationService:
                 utilisation_percent=allocation.utilisation_percent,
             )
         )
-        await self._notification_service.send(
+        sent = await self._notification_service.send(
             NotificationIntent(
                 notification_type=NotificationType.ALLOCATION_CONFIRMATION,
                 dedupe_key=f"allocation:{allocation.id}:confirmation",
@@ -39,3 +59,9 @@ class AllocationNotificationService:
                 entity_id=allocation.id,
             )
         )
+        if not sent:
+            logger.warning(
+                "Allocation confirmation not delivered: allocation_id=%s to=%s",
+                allocation.id,
+                resource.user.email,
+            )

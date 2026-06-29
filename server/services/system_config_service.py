@@ -6,6 +6,8 @@ from server.core.exceptions import (
     InvalidLlmApiKeyError,
     InvalidMaxWeeklyHoursError,
     InvalidSchedulerIntervalError,
+    InvalidSmtpConfigError,
+    InvalidSmtpPortError,
     LlmNotConfiguredError,
     NoConfigFieldsToUpdateError,
     SystemConfigNotFoundError,
@@ -30,6 +32,7 @@ class SystemConfigService:
     MAX_SCHEDULER_HOURS = 24
     MIN_WEEKLY_HOURS = 1
     MAX_WEEKLY_HOURS = 168
+    ALLOWED_SMTP_PORTS = frozenset({25, 465, 587, 2525})
 
     def __init__(
         self,
@@ -77,6 +80,32 @@ class SystemConfigService:
             self._validate_max_weekly_hours(dto.max_weekly_hours)
             config.max_weekly_hours = dto.max_weekly_hours
 
+        if "smtp_host" in dto.model_fields_set and dto.smtp_host is not None:
+            config.smtp_host = dto.smtp_host.strip()
+
+        if dto.smtp_port is not None:
+            self._validate_smtp_port(dto.smtp_port)
+            config.smtp_port = dto.smtp_port
+
+        if "smtp_username" in dto.model_fields_set and dto.smtp_username is not None:
+            config.smtp_username = dto.smtp_username.strip()
+
+        if "smtp_password" in dto.model_fields_set and dto.smtp_password is not None:
+            if not dto.smtp_password.strip():
+                raise InvalidSmtpConfigError("SMTP password cannot be empty")
+            config.smtp_password = dto.smtp_password.strip()
+
+        if "smtp_from_email" in dto.model_fields_set and dto.smtp_from_email is not None:
+            if not dto.smtp_from_email.strip():
+                raise InvalidSmtpConfigError("SMTP from email cannot be empty")
+            config.smtp_from_email = dto.smtp_from_email.strip()
+
+        if dto.email_enabled is not None:
+            config.email_enabled = dto.email_enabled
+
+        if config.email_enabled:
+            self._validate_smtp_ready(config)
+
         saved = await self._config_repository.save(config)
 
         if dto.scheduler_interval_hours is not None:
@@ -98,6 +127,12 @@ class SystemConfigService:
             llm_api_key_masked=self._api_key_masker.mask(config.llm_api_key),
             scheduler_interval_hours=config.scheduler_interval_hours,
             max_weekly_hours=config.max_weekly_hours,
+            email_enabled=config.email_enabled,
+            smtp_host=config.smtp_host,
+            smtp_port=config.smtp_port,
+            smtp_username=config.smtp_username,
+            smtp_password_masked=self._api_key_masker.mask(config.smtp_password),
+            smtp_from_email=config.smtp_from_email,
             updated_at=config.updated_at,
         )
 
@@ -112,3 +147,20 @@ class SystemConfigService:
             raise InvalidMaxWeeklyHoursError(
                 "Max weekly hours must be between 1 and 168"
             )
+
+    def _validate_smtp_port(self, port: int) -> None:
+        if port not in self.ALLOWED_SMTP_PORTS:
+            raise InvalidSmtpPortError(
+                "SMTP port must be one of: 25, 465, 587, 2525"
+            )
+
+    def _validate_smtp_ready(self, config: SystemConfig) -> None:
+        if not config.smtp_host.strip():
+            raise InvalidSmtpConfigError(
+                "SMTP host is required when email is enabled"
+            )
+        if not config.smtp_from_email.strip():
+            raise InvalidSmtpConfigError(
+                "SMTP from email is required when email is enabled"
+            )
+        self._validate_smtp_port(config.smtp_port)

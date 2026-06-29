@@ -447,7 +447,7 @@ class HttpxClient:
         response = await self._request("GET", "/config", authenticated=True)
         return SystemConfigResponse.model_validate(response.json())
 
-    async def update_config(self, **fields: str | int) -> SystemConfigUpdatedResponse:
+    async def update_config(self, **fields: str | int | bool) -> SystemConfigUpdatedResponse:
         response = await self._request(
             "PUT",
             "/config",

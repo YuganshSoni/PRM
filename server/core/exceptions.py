@@ -149,6 +149,14 @@ class InvalidMaxWeeklyHoursError(ValidationError):
     pass
 
 
+class InvalidSmtpPortError(ValidationError):
+    pass
+
+
+class InvalidSmtpConfigError(ValidationError):
+    pass
+
+
 class InvalidLlmApiKeyError(ValidationError):
     pass
 
