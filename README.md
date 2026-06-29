@@ -246,6 +246,9 @@ Requires Admin to configure `llm_api_key` via System Configuration before AI fea
 ```bash
 python scripts/verify_db.py
 pytest tests/ -v
+
+# Unit-test coverage report (HTML at htmlcov/index.html)
+pytest tests/ --cov=server --cov-report=term --cov-report=html:htmlcov
 ```
 
 ## Bootstrap admin
