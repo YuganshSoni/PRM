@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from server.ai.services.project_facts_service import ProjectFactsService
 from server.ai.services.team_build_candidate_service import TeamBuildCandidateService
+from server.services.manager_team_service import ManagerTeamService
 from server.notifications.services.allocation_notification_service import (
     AllocationNotificationService,
 )
@@ -62,7 +63,7 @@ def build_notification_bundle(session: AsyncSession) -> NotificationBundle:
         notification_service=notification_service,
     )
     bench_service = TeamBuildCandidateService(
-        resource_repository=resource_repository,
+        manager_team_service=ManagerTeamService(resource_repository),
         timesheet_repository=timesheet_repository,
     )
     help_service = AtRiskHelpSuggestionService(

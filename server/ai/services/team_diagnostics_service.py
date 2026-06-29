@@ -1,16 +1,16 @@
 from server.ai.dto.team_build import SkillProficiencyDTO, TeamDiagnosticMemberDTO
 from server.models.enums import ProficiencyLevel, ResourceStatusEnum, SkillCategoryEnum
-from server.repositories.resource_repository import ResourceRepository
+from server.services.manager_team_service import ManagerTeamService
 
 
 class TeamDiagnosticsService:
-    def __init__(self, resource_repository: ResourceRepository) -> None:
-        self._resource_repository = resource_repository
+    def __init__(self, manager_team_service: ManagerTeamService) -> None:
+        self._manager_team_service = manager_team_service
 
     async def load_for_manager(
         self, manager_resource_id: int
     ) -> list[TeamDiagnosticMemberDTO]:
-        resources = await self._resource_repository.find_active_by_manager_id(
+        resources = await self._manager_team_service.list_active_team_members(
             manager_resource_id,
             load_skills=True,
         )

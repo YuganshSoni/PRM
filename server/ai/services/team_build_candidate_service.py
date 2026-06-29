@@ -1,25 +1,33 @@
+import logging
+
 from server.ai.dto.team_build import SkillProficiencyDTO, TeamBuildCandidateDTO
-from server.models.enums import ProficiencyLevel, ResourceStatusEnum, SkillCategoryEnum
-from server.repositories.resource_repository import ResourceRepository
+from server.models.enums import ProficiencyLevel, SkillCategoryEnum
 from server.repositories.timesheet_repository import TimesheetRepository
+from server.services.manager_team_service import ManagerTeamService
+
+logger = logging.getLogger(__name__)
 
 
 class TeamBuildCandidateService:
     def __init__(
         self,
-        resource_repository: ResourceRepository,
+        manager_team_service: ManagerTeamService,
         timesheet_repository: TimesheetRepository,
     ) -> None:
-        self._resource_repository = resource_repository
+        self._manager_team_service = manager_team_service
         self._timesheet_repository = timesheet_repository
 
     async def load_bench_for_manager(
         self, manager_resource_id: int
     ) -> list[TeamBuildCandidateDTO]:
-        resources = await self._resource_repository.find_by_manager_and_status(
+        resources = await self._manager_team_service.list_bench_team_members(
             manager_resource_id,
-            ResourceStatusEnum.BENCH,
             load_skills=True,
+        )
+        logger.info(
+            "Team build candidate pool: manager_resource_id=%s resource_ids=%s",
+            manager_resource_id,
+            [resource.id for resource in resources],
         )
         candidates: list[TeamBuildCandidateDTO] = []
         for resource in resources:

@@ -35,6 +35,7 @@ from server.repositories.user_repository import UserRepository
 from server.ai.llm_factory import LLMFactory
 from server.ai.services.project_facts_service import ProjectFactsService
 from server.ai.services.skill_match_candidate_service import SkillMatchCandidateService
+from server.services.manager_team_service import ManagerTeamService
 from server.ai.services.availability_date_service import AvailabilityDateService
 from server.ai.services.team_build_candidate_service import TeamBuildCandidateService
 from server.ai.services.team_diagnostics_service import TeamDiagnosticsService
@@ -268,8 +269,9 @@ dependency_provider.get_allocation_view_service = get_allocation_view_service
 async def get_resource_dashboard_service(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> ResourceDashboardService:
+    resource_repository = ResourceRepository(session)
     return ResourceDashboardService(
-        resource_repository=ResourceRepository(session),
+        manager_team_service=ManagerTeamService(resource_repository),
         allocation_repository=AllocationRepository(session),
         skill_repository=SkillRepository(session),
         timesheet_repository=TimesheetRepository(session),
@@ -347,6 +349,7 @@ async def get_ai_service(
     resource_repository = ResourceRepository(session)
     allocation_repository = AllocationRepository(session)
     timesheet_repository = TimesheetRepository(session)
+    manager_team_service = ManagerTeamService(resource_repository)
     availability_date_service = AvailabilityDateService(allocation_repository)
     team_gap_analyzer = TeamGapAnalyzer(
         availability_date_service=availability_date_service
@@ -356,7 +359,7 @@ async def get_ai_service(
         resource_repository=resource_repository,
         project_repository=ProjectRepository(session),
         candidate_service=SkillMatchCandidateService(
-            resource_repository=resource_repository,
+            manager_team_service=manager_team_service,
             allocation_repository=allocation_repository,
             timesheet_repository=timesheet_repository,
         ),
@@ -368,13 +371,14 @@ async def get_ai_service(
         ),
         llm_factory=LLMFactory(),
         team_build_candidate_service=TeamBuildCandidateService(
-            resource_repository=resource_repository,
+            manager_team_service=manager_team_service,
             timesheet_repository=timesheet_repository,
         ),
         team_diagnostics_service=TeamDiagnosticsService(
-            resource_repository=resource_repository,
+            manager_team_service=manager_team_service,
         ),
         team_gap_analyzer=team_gap_analyzer,
+        manager_team_service=manager_team_service,
     )
 
 

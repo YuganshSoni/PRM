@@ -1,18 +1,10 @@
 from collections import defaultdict
 from datetime import datetime
 
-from server.core.exceptions import (
-    EmployeeNotFoundError,
-    ForbiddenError,
-    ManagerProfileNotFoundError,
-)
 from server.models.allocation import Allocation
-from server.models.enums import ResourceStatusEnum
-from server.models.resource import Resource
 from server.models.resource_skill import ResourceSkill
 from server.models.user import User
 from server.repositories.allocation_repository import AllocationRepository
-from server.repositories.resource_repository import ResourceRepository
 from server.repositories.skill_repository import SkillRepository
 from server.repositories.timesheet_repository import TimesheetRepository
 from server.schemas.responses.dashboard import (
@@ -23,18 +15,19 @@ from server.schemas.responses.dashboard import (
     DashboardStatsResponse,
     ResourceDashboardResponse,
 )
+from server.services.manager_team_service import ManagerTeamService
 from server.services.resource_mapper import ResourceMapper
 
 
 class ResourceDashboardService:
     def __init__(
         self,
-        resource_repository: ResourceRepository,
+        manager_team_service: ManagerTeamService,
         allocation_repository: AllocationRepository,
         skill_repository: SkillRepository,
         timesheet_repository: TimesheetRepository,
     ) -> None:
-        self._resource_repository = resource_repository
+        self._manager_team_service = manager_team_service
         self._allocation_repository = allocation_repository
         self._skill_repository = skill_repository
         self._timesheet_repository = timesheet_repository
@@ -42,9 +35,8 @@ class ResourceDashboardService:
     async def get_resource_dashboard(self, user: User) -> ResourceDashboardResponse:
         manager_resource_id = await self._resolve_manager_resource_id(user)
 
-        bench_resources = await self._resource_repository.find_by_manager_and_status(
+        bench_resources = await self._manager_team_service.list_bench_team_members(
             manager_resource_id,
-            ResourceStatusEnum.BENCH,
             load_skills=True,
         )
         team_allocations = await self._allocation_repository.find_active_by_team(
@@ -97,11 +89,9 @@ class ResourceDashboardService:
     ) -> DashboardEmployeeDetailResponse:
         manager_resource_id = await self._resolve_manager_resource_id(user)
 
-        resource = await self._resource_repository.get_by_id_with_user(resource_id)
-        if resource is None:
-            raise EmployeeNotFoundError("Resource not found")
-        if resource.manager_id != manager_resource_id:
-            raise ForbiddenError("Resource not in your team")
+        resource = await self._manager_team_service.get_team_member(
+            manager_resource_id, resource_id
+        )
 
         skills = await self._skill_repository.find_by_resource_id(resource_id)
         allocations = await self._allocation_repository.find_active_by_resource(
@@ -132,12 +122,7 @@ class ResourceDashboardService:
         )
 
     async def _resolve_manager_resource_id(self, user: User) -> int:
-        manager_resource = await self._resource_repository.find_by_user_id(user.id)
-        if manager_resource is None:
-            raise ManagerProfileNotFoundError(
-                "Manager user does not have an resource profile"
-            )
-        return manager_resource.id
+        return await self._manager_team_service.resolve_manager_resource_id(user)
 
     @staticmethod
     def _sum_utilisation_by_resource(

@@ -44,6 +44,7 @@ from server.schemas.responses.ai import (
     TeamRoleGapResponse,
     TeamRoleMatchResponse,
 )
+from server.services.manager_team_service import ManagerTeamService
 from server.services.system_config_service import SystemConfigService
 
 RISK_SUMMARY_DISCLAIMER = (
@@ -74,6 +75,7 @@ class AIService:
         team_build_candidate_service: TeamBuildCandidateService,
         team_diagnostics_service: TeamDiagnosticsService,
         team_gap_analyzer: TeamGapAnalyzer,
+        manager_team_service: ManagerTeamService,
         skill_match_runner: SkillMatchGraphRunner | None = None,
         risk_summary_runner: RiskSummaryGraphRunner | None = None,
         team_build_runner: TeamBuildGraphRunner | None = None,
@@ -87,6 +89,7 @@ class AIService:
         self._team_build_candidate_service = team_build_candidate_service
         self._team_diagnostics_service = team_diagnostics_service
         self._team_gap_analyzer = team_gap_analyzer
+        self._manager_team_service = manager_team_service
         self._requirement_evaluator = SkillMatchRequirementEvaluator()
         self._skill_match_runner = skill_match_runner or SkillMatchGraphRunner()
         self._risk_summary_runner = risk_summary_runner or RiskSummaryGraphRunner()
@@ -333,10 +336,7 @@ class AIService:
         )
 
     async def _resolve_manager_resource_id(self, user: User) -> int:
-        resource = await self._resource_repository.find_by_user_id(user.id)
-        if resource is None:
-            raise ManagerProfileNotFoundError("Manager profile not found")
-        return resource.id
+        return await self._manager_team_service.resolve_manager_resource_id(user)
 
     async def _ensure_project_owned(
         self, project_id: int, manager_resource_id: int

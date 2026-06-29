@@ -1,27 +1,36 @@
+import logging
 from collections import defaultdict
 
 from server.ai.dto.skill_match import SkillMatchCandidateDTO
 from server.repositories.allocation_repository import AllocationRepository
-from server.repositories.resource_repository import ResourceRepository
 from server.repositories.timesheet_repository import TimesheetRepository
+from server.services.manager_team_service import ManagerTeamService
+
+logger = logging.getLogger(__name__)
 
 
 class SkillMatchCandidateService:
     def __init__(
         self,
-        resource_repository: ResourceRepository,
+        manager_team_service: ManagerTeamService,
         allocation_repository: AllocationRepository,
         timesheet_repository: TimesheetRepository,
     ) -> None:
-        self._resource_repository = resource_repository
+        self._manager_team_service = manager_team_service
         self._allocation_repository = allocation_repository
         self._timesheet_repository = timesheet_repository
 
     async def load_for_manager(
         self, manager_resource_id: int, *, max_weekly_hours: int
     ) -> list[SkillMatchCandidateDTO]:
-        resources = await self._resource_repository.find_active_by_manager_id(
-            manager_resource_id
+        resources = await self._manager_team_service.list_active_team_members(
+            manager_resource_id,
+            load_skills=True,
+        )
+        logger.info(
+            "Skill match candidate pool: manager_resource_id=%s resource_ids=%s",
+            manager_resource_id,
+            [resource.id for resource in resources],
         )
         if not resources:
             return []

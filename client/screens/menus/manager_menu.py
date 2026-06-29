@@ -8,6 +8,7 @@ from client.screens.manager.allocate_resource_screen import AllocateResourceScre
 from client.screens.manager.my_projects_screen import MyProjectsScreen
 from client.screens.manager.resource_dashboard_screen import ResourceDashboardScreen
 from client.screens.manager.team_builder_screen import TeamBuilderScreen
+from client.screens.manager.timesheets_view_screen import TimesheetsViewScreen
 from client.screens.screen_result import ScreenResult
 
 
