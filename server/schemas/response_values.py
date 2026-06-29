@@ -38,6 +38,11 @@ class EmployeeMessage(StrEnum):
     PROFILE_UPDATED = "Resource profile updated."
     MANAGER_ASSIGNED = "Manager assigned successfully."
     EMPLOYEE_DEACTIVATED = "Resource deactivated."
+    EMPLOYEE_REACTIVATED = "Resource reactivated."
+    EMPLOYEE_REACTIVATED_LOGIN_BLOCKED = (
+        "Resource reactivated. User login is still inactive — "
+        "reactivate from Manage Users if needed."
+    )
 
 
 class SkillMessage(StrEnum):

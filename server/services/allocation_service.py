@@ -266,18 +266,32 @@ class AllocationService:
                 )
             )
             max_weekly = Decimal(config.max_weekly_hours)
+            project_rows: dict[int, dict[str, object]] = {}
+            for allocation in allocations:
+                project_id = allocation.project_id
+                if project_id not in project_rows:
+                    project_rows[project_id] = {
+                        "project_name": allocation.project.name,
+                        "utilisation_percent": allocation.utilisation_percent,
+                    }
+                else:
+                    project_rows[project_id]["utilisation_percent"] = (
+                        int(project_rows[project_id]["utilisation_percent"])
+                        + allocation.utilisation_percent
+                    )
+
             projects = [
                 WeekProjectAllocationResponse(
-                    project_id=allocation.project_id,
-                    project_name=allocation.project.name,
-                    utilisation_percent=allocation.utilisation_percent,
+                    project_id=project_id,
+                    project_name=str(data["project_name"]),
+                    utilisation_percent=int(data["utilisation_percent"]),
                     max_hours=float(
-                        Decimal(allocation.utilisation_percent)
+                        Decimal(int(data["utilisation_percent"]))
                         / Decimal(100)
                         * max_weekly
                     ),
                 )
-                for allocation in allocations
+                for project_id, data in sorted(project_rows.items())
             ]
             return WeekAllocationContextResponse(
                 week_start=week_start,

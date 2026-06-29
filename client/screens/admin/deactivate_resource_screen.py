@@ -42,8 +42,9 @@ class DeactivateResourceScreen(BaseScreen):
             print()
 
         print(f"Are you sure you want to deactivate {resource.full_name}?")
-        print("This will: set is_active = false, end all active allocations today,")
-        print("and block their login account.")
+        print("This will: set is_active = false and end all active allocations today.")
+        print("Their login account will NOT be blocked — use Manage Users →")
+        print("Deactivate User separately if login access should be removed.")
         print()
         print("[Y] Yes, Deactivate     [B] Cancel")
         print()

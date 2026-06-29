@@ -97,4 +97,8 @@ class ViewUsersScreen(BaseScreen):
             "Note: Previous allocations are NOT restored. "
             "Admin must re-allocate manually if needed."
         )
+        self._renderer.render_message(
+            "If the employee profile was deactivated via Manage Employees, "
+            "also use Reactivate Resource to restore workforce access."
+        )
         return ScreenResult.RETRY

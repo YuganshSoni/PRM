@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from server.core.dependencies import dependency_provider
 from server.models.allocation import Allocation
 from server.models.resource import Resource
-from server.models.enums import ResourceStatusEnum, UserRole
+from server.models.enums import ResourceStatusEnum, UserRole, UserStatus
 from server.models.user import User
 from server.schemas.requests.resource import AssignManagerRequest, UpdateEmployeeRequest
 from server.schemas.requests.skill import AddSkillRequest
@@ -29,6 +29,12 @@ from server.services.skill_service import SkillService
 class EmployeeRouter:
     def __init__(self) -> None:
         self.router = APIRouter(prefix="/resources", tags=["resources"])
+        self.router.add_api_route(
+            "/by-user/{user_id}",
+            self.get_resource_by_user,
+            methods=["GET"],
+            response_model=EmployeeDetailResponse,
+        )
         self.router.add_api_route(
             "/by-user/{user_id}",
             self.update_resource,
@@ -56,6 +62,12 @@ class EmployeeRouter:
         self.router.add_api_route(
             "/{resource_id}/deactivate",
             self.deactivate_resource,
+            methods=["POST"],
+            response_model=EmployeeActionResponse,
+        )
+        self.router.add_api_route(
+            "/{resource_id}/reactivate",
+            self.reactivate_resource,
             methods=["POST"],
             response_model=EmployeeActionResponse,
         )
@@ -150,6 +162,17 @@ class EmployeeRouter:
         allocations = await resource_service.get_active_allocations(resource_id)
         return self._to_detail(resource, allocations)
 
+    async def get_resource_by_user(
+        self,
+        user_id: int,
+        _admin: Annotated[User, Depends(dependency_provider.require_role(UserRole.ADMIN))],
+        __: Annotated[User, Depends(dependency_provider.require_password_changed)],
+        resource_service: EmployeeService = Depends(dependency_provider.get_resource_service),
+    ) -> EmployeeDetailResponse:
+        resource = await resource_service.get_resource_by_user_id(user_id)
+        allocations = await resource_service.get_active_allocations(resource.id)
+        return self._to_detail(resource, allocations)
+
     async def deactivate_resource(
         self,
         resource_id: int,
@@ -161,6 +184,25 @@ class EmployeeRouter:
         return EmployeeActionResponse(
             resource_id=resource_id,
             message=EmployeeMessage.EMPLOYEE_DEACTIVATED,
+        )
+
+    async def reactivate_resource(
+        self,
+        resource_id: int,
+        _admin: Annotated[User, Depends(dependency_provider.require_role(UserRole.ADMIN))],
+        __: Annotated[User, Depends(dependency_provider.require_password_changed)],
+        resource_service: EmployeeService = Depends(dependency_provider.get_resource_service),
+    ) -> EmployeeActionResponse:
+        resource = await resource_service.reactivate_resource(resource_id)
+        message = EmployeeMessage.EMPLOYEE_REACTIVATED
+        if (
+            resource.user is not None
+            and resource.user.status == UserStatus.INACTIVE
+        ):
+            message = EmployeeMessage.EMPLOYEE_REACTIVATED_LOGIN_BLOCKED
+        return EmployeeActionResponse(
+            resource_id=resource.id,
+            message=message,
         )
 
     async def list_skills(

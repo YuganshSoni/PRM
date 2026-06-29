@@ -1,6 +1,7 @@
 from client.screens.admin.assign_manager_screen import AssignManagerScreen
 from client.screens.admin.deactivate_resource_screen import DeactivateResourceScreen
 from client.screens.admin.manage_skills_screen import ManageSkillsScreen
+from client.screens.admin.reactivate_resource_screen import ReactivateResourceScreen
 from client.screens.admin.update_resource_screen import UpdateResourceScreen
 from client.screens.admin.view_resources_screen import ViewResourcesScreen
 from client.screens.base_screen import BaseScreen
@@ -16,11 +17,12 @@ class ResourceManagementScreen(BaseScreen):
             print("3. Deactivate Resource")
             print("4. Manage Resource Skills")
             print("5. Assign Manager")
-            print("6. Back")
+            print("6. Reactivate Resource")
+            print("7. Back")
             print()
 
             option = self._reader.read_option("Enter option: ").strip()
-            if option == "6":
+            if option == "7":
                 return ScreenResult.BACK
 
             result = await self._dispatch_option(option)
@@ -49,6 +51,8 @@ class ResourceManagementScreen(BaseScreen):
                 return await ManageSkillsScreen(*screen_args).run()
             case "5":
                 return await AssignManagerScreen(*screen_args).run()
+            case "6":
+                return await ReactivateResourceScreen(*screen_args).run()
             case _:
-                self._renderer.render_error("Invalid option. Please enter 1–6.")
+                self._renderer.render_error("Invalid option. Please enter 1–7.")
                 return ScreenResult.RETRY

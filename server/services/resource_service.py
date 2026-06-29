@@ -3,6 +3,8 @@ from datetime import date
 
 from server.core.user_role import user_role_enum
 from server.core.exceptions import (
+    DuplicateEmailError,
+    EmployeeAlreadyActiveError,
     EmployeeAlreadyInactiveError,
     EmployeeNotFoundError,
     InvalidManagerRoleError,
@@ -14,7 +16,7 @@ from server.core.exceptions import (
     UserNotFoundError,
 )
 from server.models.resource import Resource
-from server.models.enums import ResourceStatusEnum, UserRole, UserStatus
+from server.models.enums import ResourceStatusEnum, UserRole
 from server.repositories.allocation_repository import AllocationRepository
 from server.repositories.department_repository import DepartmentRepository
 from server.repositories.designation_repository import DesignationRepository
@@ -66,8 +68,13 @@ class EmployeeService:
                 "User must have EMPLOYEE or MANAGER role"
             )
 
+        email = str(dto.email)
+        existing_email_user = await self._user_repository.find_by_email(email)
+        if existing_email_user is not None and existing_email_user.id != user_id:
+            raise DuplicateEmailError("Email already exists")
+
         user.full_name = dto.full_name
-        user.email = str(dto.email)
+        user.email = email
         await self._user_repository.save(user)
 
         department = await self._department_repository.find_or_create_by_name(
@@ -135,6 +142,13 @@ class EmployeeService:
             raise EmployeeNotFoundError("Resource not found")
         return resource
 
+    async def get_resource_by_user_id(self, user_id: int) -> Resource:
+        resource = await self._resource_repository.find_by_user_id(user_id)
+        if resource is None:
+            raise EmployeeNotFoundError("Resource profile not found for user")
+        loaded = await self._resource_repository.get_by_id_with_user(resource.id)
+        return loaded if loaded is not None else resource
+
     async def get_active_allocations(self, resource_id: int):
         await self.get_resource(resource_id)
         return await self._allocation_repository.find_active_by_resource(resource_id)
@@ -194,9 +208,22 @@ class EmployeeService:
         resource.resource_status_id = bench_status.id
         await self._resource_repository.save(resource)
 
-        user = await self._user_repository.find_by_id(resource.user_id)
-        if user is not None:
-            user.status = UserStatus.INACTIVE
-            await self._user_repository.save(user)
-
         return resource
+
+    async def reactivate_resource(self, resource_id: int) -> Resource:
+        resource = await self.get_resource(resource_id)
+        if resource.is_active:
+            raise EmployeeAlreadyActiveError("Resource is already active")
+
+        bench_status = await self._resource_status_repository.find_by_name(
+            ResourceStatusEnum.BENCH.value
+        )
+        if bench_status is None:
+            raise ResourceStatusNotFoundError("Resource status BENCH not found")
+
+        resource.is_active = True
+        resource.resource_status_id = bench_status.id
+        await self._resource_repository.save(resource)
+
+        reloaded = await self._resource_repository.get_by_id_with_user(resource.id)
+        return reloaded if reloaded is not None else resource

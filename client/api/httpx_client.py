@@ -252,10 +252,26 @@ class HttpxClient:
         )
         return EmployeeDetailResponse.model_validate(response.json())
 
+    async def get_employee_by_user(self, user_id: int) -> EmployeeDetailResponse:
+        response = await self._request(
+            "GET",
+            f"/resources/by-user/{user_id}",
+            authenticated=True,
+        )
+        return EmployeeDetailResponse.model_validate(response.json())
+
     async def deactivate_employee(self, employee_id: int) -> EmployeeActionResponse:
         response = await self._request(
             "POST",
             f"/resources/{employee_id}/deactivate",
+            authenticated=True,
+        )
+        return EmployeeActionResponse.model_validate(response.json())
+
+    async def reactivate_employee(self, employee_id: int) -> EmployeeActionResponse:
+        response = await self._request(
+            "POST",
+            f"/resources/{employee_id}/reactivate",
             authenticated=True,
         )
         return EmployeeActionResponse.model_validate(response.json())

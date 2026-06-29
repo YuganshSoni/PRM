@@ -85,6 +85,10 @@ class EmployeeAlreadyInactiveError(ValidationError):
     pass
 
 
+class EmployeeAlreadyActiveError(ValidationError):
+    pass
+
+
 class ManagerUserNotFoundError(NotFoundError):
     pass
 
@@ -198,6 +202,10 @@ class TimesheetNotFoundError(NotFoundError):
 
 
 class DuplicateTimesheetError(ConflictError):
+    pass
+
+
+class DuplicateTimesheetProjectError(ValidationError):
     pass
 
 

@@ -1,8 +1,12 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
+from collections import defaultdict
+
+from sqlalchemy.exc import IntegrityError
 
 from server.core.exceptions import (
     DuplicateTimesheetError,
+    DuplicateTimesheetProjectError,
     EmployeeProfileNotFoundError,
     HoursExceededError,
     InvalidActivityTagError,
@@ -97,14 +101,14 @@ class TimesheetService:
         allocations = await self._allocation_repository.find_active_for_resource_in_week(
             resource_id, dto.week_start
         )
-        allocation_by_project = {item.project_id: item for item in allocations}
+        utilisation_by_project = self._aggregate_utilisation_by_project(allocations)
 
         config = await self._system_config_repository.get()
         if config is None:
             raise SystemConfigNotFoundError("System configuration not found")
         max_weekly_hours = config.max_weekly_hours
 
-        self.validate_hours(dto.entries, allocation_by_project, max_weekly_hours)
+        self.validate_hours(dto.entries, utilisation_by_project, max_weekly_hours)
         await self._validate_tags(dto.entries)
 
         total_hours = sum((entry.hours for entry in dto.entries), Decimal(0))
@@ -135,7 +139,15 @@ class TimesheetService:
                 project_id=entry_dto.project_id,
                 hours=entry_dto.hours,
             )
-            saved_entry = await self._timesheet_entry_repository.save(entry)
+            try:
+                saved_entry = await self._timesheet_entry_repository.save(entry)
+            except IntegrityError as exc:
+                if self._is_duplicate_project_entry_error(exc):
+                    raise DuplicateTimesheetProjectError(
+                        f"Each project can appear only once per timesheet "
+                        f"(duplicate project {entry_dto.project_id})"
+                    ) from exc
+                raise
             tag_rows = await self._build_entry_tags(entry_dto.tags, saved_entry.id)
             await self._timesheet_entry_tag_repository.save_all(tag_rows)
 
@@ -281,22 +293,22 @@ class TimesheetService:
     def validate_hours(
         self,
         entries: list[TimesheetEntryRequest],
-        allocation_by_project: dict[int, object],
+        utilisation_by_project: dict[int, int],
         max_weekly_hours: int,
     ) -> None:
+        self._validate_unique_projects(entries)
+
         total = Decimal(0)
         max_weekly = Decimal(max_weekly_hours)
 
         for entry in entries:
-            allocation = allocation_by_project.get(entry.project_id)
-            if allocation is None:
+            utilisation = utilisation_by_project.get(entry.project_id)
+            if utilisation is None:
                 raise NotAllocatedToProjectError(
                     f"Not allocated to project {entry.project_id} for this week"
                 )
 
-            project_max = (
-                Decimal(allocation.utilisation_percent) / Decimal(100) * max_weekly
-            )
+            project_max = Decimal(utilisation) / Decimal(100) * max_weekly
             if entry.hours > project_max:
                 raise HoursExceededError(
                     f"Hours for project {entry.project_id} exceed maximum "
@@ -308,6 +320,31 @@ class TimesheetService:
             raise TotalHoursExceededError(
                 f"Total hours {total} exceed weekly maximum of {max_weekly_hours}"
             )
+
+    @staticmethod
+    def _validate_unique_projects(entries: list[TimesheetEntryRequest]) -> None:
+        seen: set[int] = set()
+        for entry in entries:
+            if entry.project_id in seen:
+                raise DuplicateTimesheetProjectError(
+                    f"Each project can appear only once per timesheet "
+                    f"(duplicate project {entry.project_id})"
+                )
+            seen.add(entry.project_id)
+
+    @staticmethod
+    def _aggregate_utilisation_by_project(
+        allocations: list[Allocation],
+    ) -> dict[int, int]:
+        totals: dict[int, int] = defaultdict(int)
+        for allocation in allocations:
+            totals[allocation.project_id] += allocation.utilisation_percent
+        return dict(totals)
+
+    @staticmethod
+    def _is_duplicate_project_entry_error(exc: IntegrityError) -> bool:
+        message = str(exc.orig).lower()
+        return "timesheet_entries_timesheet_id_project_id_key" in message
 
     async def _validate_tags(self, entries: list[TimesheetEntryRequest]) -> None:
         predefined = await self._activity_tag_repository.list_predefined_ordered()
@@ -322,7 +359,14 @@ class TimesheetService:
         )
 
         for entry in entries:
+            seen_tag_ids: set[int] = set()
             for tag_request in entry.tags:
+                if tag_request.activity_tag_id in seen_tag_ids:
+                    raise InvalidActivityTagError(
+                        "Each activity tag can be selected only once per project entry"
+                    )
+                seen_tag_ids.add(tag_request.activity_tag_id)
+
                 tag = tag_by_id.get(tag_request.activity_tag_id)
                 if tag is None:
                     raise InvalidActivityTagError(
