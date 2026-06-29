@@ -10,5 +10,5 @@ def resolve_llm_credentials(
     api_key = (settings.llm_api_key or db_config.llm_api_key).strip()
     if not api_key:
         return None
-    provider_raw = (settings.llm_provider or db_config.llm_provider).strip()
+    provider_raw = (settings.llm_provider or db_config.llm_provider).strip().upper()
     return LlmProvider(provider_raw), api_key

@@ -14,6 +14,7 @@ from server.core.middleware import (
     RequestIdMiddleware,
     SecurityHeadersMiddleware,
 )
+from server.core.llm_config_bootstrap import LlmConfigBootstrap
 from server.core.smtp_config_bootstrap import SmtpConfigBootstrap
 from server.repositories.system_config_repository import SystemConfigRepository
 from server.routers.ai_router import AIRouter
@@ -76,9 +77,9 @@ class ApplicationFactory:
         scheduler_manager: SchedulerManager | None = None
 
         async with db_manager.session_factory() as session:
-            await SmtpConfigBootstrap.apply_from_env(
-                settings, SystemConfigRepository(session)
-            )
+            repo = SystemConfigRepository(session)
+            await SmtpConfigBootstrap.apply_from_env(settings, repo)
+            await LlmConfigBootstrap.apply_from_env(settings, repo)
             await session.commit()
 
         if settings.scheduler_enabled:

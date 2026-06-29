@@ -1,10 +1,15 @@
+import logging
+
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 
+from server.ai.llm_logging import log_llm_client_created
 from server.core.config import get_settings
 from server.core.exceptions import LlmInvocationError
 from server.models.enums import LlmProvider
+
+logger = logging.getLogger(__name__)
 
 
 class LLMFactory:
@@ -18,12 +23,22 @@ class LLMFactory:
         groq_model = settings.groq_model.strip() or self.DEFAULT_GROQ_MODEL
         try:
             if provider == LlmProvider.GEMINI:
+                log_llm_client_created(
+                    provider=provider,
+                    model=gemini_model,
+                    api_key_prefix=api_key[:8],
+                )
                 return ChatGoogleGenerativeAI(
                     model=gemini_model,
                     google_api_key=api_key,
                     timeout=self.DEFAULT_TIMEOUT_SEC,
                 )
             if provider == LlmProvider.GROQ:
+                log_llm_client_created(
+                    provider=provider,
+                    model=groq_model,
+                    api_key_prefix=api_key[:8],
+                )
                 return ChatGroq(
                     model=groq_model,
                     api_key=api_key,
@@ -33,6 +48,12 @@ class LLMFactory:
         except LlmInvocationError:
             raise
         except Exception as exc:
+            logger.error(
+                "Failed to initialize LLM provider %s: %s",
+                provider.value,
+                exc,
+                exc_info=True,
+            )
             raise LlmInvocationError(
                 f"Failed to initialize LLM provider {provider.value}"
             ) from exc

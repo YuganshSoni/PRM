@@ -19,6 +19,8 @@ class SkillMatchResponse(BaseModel):
     message: str | None = None
     llm_invoked: bool
     weekly_hours_requested: int | None = None
+    requirement_parse_invoked: bool = False
+    parsed_summary: str | None = None
 
 
 class ParsedTeamRoleResponse(BaseModel):

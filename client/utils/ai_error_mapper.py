@@ -19,4 +19,6 @@ class AiErrorMapper:
 
     @classmethod
     def message_for(cls, exc: ApiRequestError) -> str:
+        if exc.code == "LlmInvocationError" and exc.message:
+            return exc.message
         return cls._MESSAGES.get(exc.code, exc.message)

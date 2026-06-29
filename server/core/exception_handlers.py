@@ -159,6 +159,8 @@ class ExceptionHandlerRegistrar:
     async def handle_prm_error(
         self, _request: Request, exc: PrmError
     ) -> JSONResponse:
+        if isinstance(exc, LlmInvocationError):
+            logger.error("LLM invocation error returned to client: %s", exc)
         body = ErrorResponse.from_prm_error(exc)
         return JSONResponse(
             status_code=self.status_for(exc),

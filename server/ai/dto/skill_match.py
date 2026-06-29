@@ -1,5 +1,18 @@
 from dataclasses import dataclass
 
+from server.models.enums import SkillCategoryEnum
+
+
+@dataclass(frozen=True)
+class SkillMatchParsedRequirement:
+    weekly_hours: int | None
+    skill_names: list[str]
+    role_title: str | None
+    skill_category: SkillCategoryEnum | None
+    seniority: str | None
+    summary: str
+    is_actionable: bool
+
 
 @dataclass(frozen=True)
 class SkillMatchCandidateDTO:

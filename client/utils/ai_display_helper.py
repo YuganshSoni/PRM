@@ -68,7 +68,12 @@ class AiDisplayHelper:
         print()
         print(message)
         if not response.llm_invoked:
-            print("(No AI call was made — no qualifying candidates.)")
+            if response.requirement_parse_invoked and message and "Could not identify" in message:
+                print("(Requirement was too vague to search.)")
+            elif response.requirement_parse_invoked:
+                print("(No ranking was performed.)")
+            else:
+                print("(No AI call was made — no qualifying candidates.)")
         print()
 
     @staticmethod

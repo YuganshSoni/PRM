@@ -1,19 +1,21 @@
 import math
-import re
+import logging
 from typing import TypedDict
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from server.ai.chains.parse_hours_chain import ParseHoursChain
 from server.ai.chains.skill_match_chain import SkillMatchChain, SkillMatchChainInput
-from server.ai.dto.skill_match import SkillMatchCandidateDTO
+from server.ai.dto.skill_match import SkillMatchCandidateDTO, SkillMatchParsedRequirement
 from server.core.exceptions import LlmInvocationError
+
+logger = logging.getLogger(__name__)
 
 
 class SkillMatchState(TypedDict, total=False):
     requirement: str
     project_id: int | None
     candidates: list[SkillMatchCandidateDTO]
+    parsed_requirement: SkillMatchParsedRequirement
     filtered_candidates: list[SkillMatchCandidateDTO]
     weekly_hours: int | None
     max_weekly_hours: int
@@ -23,39 +25,11 @@ class SkillMatchState(TypedDict, total=False):
     llm: BaseChatModel
 
 
-class ParseWeeklyHoursNode:
-    _HOURS_PATTERNS = (
-        re.compile(r"(\d+)\s*(?:hrs?|hours?)\s*(?:/|per)\s*week", re.I),
-        re.compile(r"(\d+)\s*hrs?\s*a\s*week", re.I),
-        re.compile(r"about\s+(\d+)\s+hours?\s*per\s*week", re.I),
-    )
-    _PART_TIME_HINTS = ("part-time", "part time", "hrs/week", "hours/week", "hours per week")
-
-    def run(self, state: SkillMatchState) -> SkillMatchState:
-        requirement = state["requirement"]
-        weekly_hours: int | None = None
-        for pattern in self._HOURS_PATTERNS:
-            match = pattern.search(requirement)
-            if match:
-                weekly_hours = int(match.group(1))
-                break
-
-        if weekly_hours is None and any(
-            hint in requirement.lower() for hint in self._PART_TIME_HINTS
-        ):
-            llm = state.get("llm")
-            if llm is not None:
-                weekly_hours = ParseHoursChain(llm).invoke(requirement)
-
-        return {**state, "weekly_hours": weekly_hours}
-
-
 class PreFilterCapacityNode:
     _EMPTY_MESSAGE = "No employees with enough free capacity for this requirement"
 
     def run(self, state: SkillMatchState) -> SkillMatchState:
         weekly_hours = state.get("weekly_hours")
-        max_weekly = state["max_weekly_hours"]
         filtered: list[SkillMatchCandidateDTO] = []
 
         for candidate in state.get("candidates", []):
@@ -70,6 +44,17 @@ class PreFilterCapacityNode:
             update["message"] = self._EMPTY_MESSAGE
             update["llm_invoked"] = False
             update["ranked_items"] = []
+            logger.info(
+                "Skill match pre-filter: 0 candidates (weekly_hours=%s pool=%s)",
+                weekly_hours,
+                len(state.get("candidates", [])),
+            )
+        else:
+            logger.info(
+                "Skill match pre-filter: %s candidates (weekly_hours=%s)",
+                len(filtered),
+                weekly_hours,
+            )
         return update
 
 
@@ -79,15 +64,22 @@ class InvokeSkillMatchNode:
         if llm is None:
             raise LlmInvocationError("LLM is not available for skill match")
 
+        parsed = state["parsed_requirement"]
         try:
             output = SkillMatchChain(llm).invoke(
                 SkillMatchChainInput(
                     requirement=state["requirement"],
                     candidates=state["filtered_candidates"],
                     weekly_hours=state.get("weekly_hours"),
+                    skill_names=parsed.skill_names,
+                    role_title=parsed.role_title,
+                    skill_category=parsed.skill_category,
+                    seniority=parsed.seniority,
+                    summary=parsed.summary,
                 )
             )
         except Exception as exc:
+            logger.error("Skill match ranking LLM failed: %s", exc, exc_info=True)
             raise LlmInvocationError("Skill match LLM invocation failed") from exc
 
         name_to_candidate = {
@@ -118,6 +110,7 @@ class InvokeSkillMatchNode:
                 }
             )
 
+        logger.info("Skill match ranking complete: ranked_items=%s", len(ranked_items))
         return {**state, "ranked_items": ranked_items, "llm_invoked": True}
 
 
