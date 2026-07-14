@@ -232,9 +232,12 @@ async def test_validate_tags_rejects_duplicate_tag_ids(service, activity_tag_rep
 
 @pytest.mark.asyncio
 async def test_get_missed_reminder_shows_when_missing(
-    service, resource_repo, timesheet_repo
+    service, resource_repo, timesheet_repo, allocation_repo
 ):
     resource_repo.find_by_user_id.return_value = SimpleNamespace(id=10)
+    allocation_repo.find_active_for_resource_in_week.return_value = [
+        SimpleNamespace(id=1)
+    ]
     timesheet_repo.find_by_resource_and_week.return_value = None
 
     result = await service.get_missed_reminder(SimpleNamespace(id=1))
@@ -245,10 +248,27 @@ async def test_get_missed_reminder_shows_when_missing(
 
 
 @pytest.mark.asyncio
-async def test_get_missed_reminder_hides_when_submitted(
-    service, resource_repo, timesheet_repo
+async def test_get_missed_reminder_hides_when_no_prior_week_allocation(
+    service, resource_repo, timesheet_repo, allocation_repo
 ):
     resource_repo.find_by_user_id.return_value = SimpleNamespace(id=10)
+    allocation_repo.find_active_for_resource_in_week.return_value = []
+    timesheet_repo.find_by_resource_and_week.return_value = None
+
+    result = await service.get_missed_reminder(SimpleNamespace(id=1))
+
+    assert result.show_reminder is False
+    timesheet_repo.find_by_resource_and_week.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_get_missed_reminder_hides_when_submitted(
+    service, resource_repo, timesheet_repo, allocation_repo
+):
+    resource_repo.find_by_user_id.return_value = SimpleNamespace(id=10)
+    allocation_repo.find_active_for_resource_in_week.return_value = [
+        SimpleNamespace(id=1)
+    ]
     timesheet_repo.find_by_resource_and_week.return_value = SimpleNamespace(
         status=TimesheetStatus.SUBMITTED
     )

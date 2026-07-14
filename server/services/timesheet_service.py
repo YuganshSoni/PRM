@@ -233,6 +233,16 @@ class TimesheetService:
     async def get_missed_reminder(self, user: User) -> MissedReminderResponse:
         resource_id = await self._resolve_resource_id(user)
         prior_week = WeekCalculator.prior_week_monday(date.today())
+
+        # Only remind when the resource was actually allocated in the prior week.
+        # New employees (or anyone without that week's allocation) must not see
+        # a false "missed timesheet" banner on the employee menu.
+        allocations = await self._allocation_repository.find_active_for_resource_in_week(
+            resource_id, prior_week
+        )
+        if not allocations:
+            return MissedReminderResponse(show_reminder=False)
+
         timesheet = await self._timesheet_repository.find_by_resource_and_week(
             resource_id, prior_week
         )
