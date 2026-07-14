@@ -1,0 +1,103 @@
+from enum import StrEnum
+
+class UserRole(StrEnum):
+    ADMIN = "ADMIN"
+    MANAGER = "MANAGER"
+    RESOURCE = "RESOURCE"
+
+class ResourceStatusEnum(StrEnum):
+    BENCH = "BENCH"
+    ALLOCATED = "ALLOCATED"
+
+class SkillCategoryEnum(StrEnum):
+    BACKEND = "BACKEND"
+    FRONTEND = "FRONTEND"
+    DEVOPS = "DEVOPS"
+    QA = "QA"
+    OTHER = "OTHER"
+
+class UserStatus(StrEnum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+
+class ProficiencyLevel(StrEnum):
+    BEGINNER = "BEGINNER"
+    INTERMEDIATE = "INTERMEDIATE"
+    ADVANCED = "ADVANCED"
+
+
+class ProjectStatus(StrEnum):
+    PLANNED = "PLANNED"
+    ACTIVE = "ACTIVE"
+    ON_HOLD = "ON_HOLD"
+    COMPLETED = "COMPLETED"
+
+
+class MilestoneStatus(StrEnum):
+    NOT_STARTED = "NOT_STARTED"
+    IN_PROGRESS = "IN_PROGRESS"
+    DONE = "DONE"
+
+
+class TimesheetStatus(StrEnum):
+    SUBMITTED = "SUBMITTED"
+    MISSED = "MISSED"
+
+
+class HealthStatus(StrEnum):
+    ON_TRACK = "ON_TRACK"
+    ATTENTION = "ATTENTION"
+    AT_RISK = "AT_RISK"
+
+
+class LlmProvider(StrEnum):
+    GEMINI = "GEMINI"
+    GROQ = "GROQ"
+
+
+class NotificationType(StrEnum):
+    ALLOCATION_CONFIRMATION = "ALLOCATION_CONFIRMATION"
+    TIMESHEET_REMINDER_1 = "TIMESHEET_REMINDER_1"
+    TIMESHEET_REMINDER_2 = "TIMESHEET_REMINDER_2"
+    TIMESHEET_FROZEN_EMPLOYEE = "TIMESHEET_FROZEN_EMPLOYEE"
+    TIMESHEET_FROZEN_MANAGER = "TIMESHEET_FROZEN_MANAGER"
+    PROJECT_AT_RISK = "PROJECT_AT_RISK"
+
+
+class NotificationDeliveryStatus(StrEnum):
+    SENT = "SENT"
+    FAILED = "FAILED"
+    SKIPPED_DUPLICATE = "SKIPPED_DUPLICATE"
+
+
+class TimesheetComplianceStatus(StrEnum):
+    PENDING = "PENDING"
+    REMINDER_1_SENT = "REMINDER_1_SENT"
+    REMINDER_2_SENT = "REMINDER_2_SENT"
+    FROZEN = "FROZEN"
+    RESTORED = "RESTORED"
+    SUBMITTED = "SUBMITTED"
+
+
+class NotificationType(StrEnum):
+    ALLOCATION_CONFIRMATION = "ALLOCATION_CONFIRMATION"
+    TIMESHEET_REMINDER_1 = "TIMESHEET_REMINDER_1"
+    TIMESHEET_REMINDER_2 = "TIMESHEET_REMINDER_2"
+    TIMESHEET_FROZEN_EMPLOYEE = "TIMESHEET_FROZEN_EMPLOYEE"
+    TIMESHEET_FROZEN_MANAGER = "TIMESHEET_FROZEN_MANAGER"
+    PROJECT_AT_RISK = "PROJECT_AT_RISK"
+
+
+class NotificationDeliveryStatus(StrEnum):
+    SENT = "SENT"
+    FAILED = "FAILED"
+    SKIPPED_DUPLICATE = "SKIPPED_DUPLICATE"
+
+
+class TimesheetComplianceStatus(StrEnum):
+    PENDING = "PENDING"
+    REMINDER_1_SENT = "REMINDER_1_SENT"
+    REMINDER_2_SENT = "REMINDER_2_SENT"
+    FROZEN = "FROZEN"
+    RESTORED = "RESTORED"
+    SUBMITTED = "SUBMITTED"

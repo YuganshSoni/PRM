@@ -1,0 +1,94 @@
+from datetime import datetime
+
+from client.exceptions import ApiRequestError, NetworkError
+from client.screens.admin.allocation_view_screen import AllocationViewScreen
+from client.screens.admin.resource_management_screen import ResourceManagementScreen
+from client.screens.admin.project_management_screen import ProjectManagementScreen
+from client.screens.admin.system_config_screen import SystemConfigScreen
+from client.screens.admin.user_management_screen import UserManagementScreen
+from client.screens.base_screen import BaseScreen
+from client.screens.screen_result import ScreenResult
+
+
+class AdminMenu(BaseScreen):
+    async def run(self) -> ScreenResult:
+        while True:
+            session = self._session_manager.current
+            full_name = session.full_name if session else "Admin"
+            now = datetime.now().strftime("%d-%m-%Y  %H:%M")
+
+            self._renderer.render_banner(
+                "ADMIN PANEL",
+                f"Welcome, {full_name}  |  {now}",
+            )
+            print("1. Manage Resources")
+            print("2. Manage Projects")
+            print("3. View All Allocations")
+            print("4. Manage Users")
+            print("5. System Configuration")
+            print("6. Logout")
+            print()
+
+            option = self._reader.read_option("Enter option: ").strip()
+            result = await self._handle_option(option)
+            if result != ScreenResult.RETRY:
+                return result
+
+    async def _handle_option(self, option: str) -> ScreenResult:
+        screen_args = (
+            self._client,
+            self._session_manager,
+            self._navigation,
+            self._renderer,
+            self._reader,
+        )
+
+        match option:
+            case "1":
+                em_result = await ResourceManagementScreen(*screen_args).run()
+                if em_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return em_result
+            case "2":
+                pm_result = await ProjectManagementScreen(*screen_args).run()
+                if pm_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return pm_result
+            case "3":
+                av_result = await AllocationViewScreen(*screen_args).run()
+                if av_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return av_result
+            case "4":
+                um_result = await UserManagementScreen(*screen_args).run()
+                if um_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return um_result
+            case "5":
+                sc_result = await SystemConfigScreen(*screen_args).run()
+                if sc_result == ScreenResult.BACK:
+                    return ScreenResult.RETRY
+                return sc_result
+            case "6":
+                return await self._logout()
+            case _:
+                self._renderer.render_error("Invalid option. Please enter 1–6.")
+                return ScreenResult.RETRY
+
+    async def _logout(self) -> ScreenResult:
+        try:
+            await self._client.logout()
+        except NetworkError as exc:
+            self._renderer.render_error(exc.message)
+            return ScreenResult.RETRY
+        except ApiRequestError as exc:
+            if exc.code in ("InvalidTokenError", "TokenExpiredError"):
+                self._session_manager.clear_session()
+                self._renderer.render_message("Session ended.")
+                return ScreenResult.LOGOUT
+            self._renderer.render_error(exc.message)
+            return ScreenResult.RETRY
+
+        self._session_manager.clear_session()
+        self._renderer.render_message("Logged out successfully.")
+        return ScreenResult.LOGOUT
